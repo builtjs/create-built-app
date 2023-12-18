@@ -1,0 +1,45 @@
+{
+  "name": "create-built-app",
+  "version": "1.0.0",
+  "description": "Node.js CLI for building Built.js themes, plugins and sites",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/builtjs/create-built-app.git"
+  },
+  "main": "build/src/index.js",
+  "keywords": [
+    "builtjs",
+    "cli"
+  ],
+  "bugs": {
+    "url": "https://github.com/builtjs/create-built-app/issues"
+  },
+  "homepage": "https://github.com/builtjs/create-built-appi#readme",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run lint"
+  },
+  "author": "Richard Lovell",
+  "dependencies": {
+    "axios": "^0.26.0",
+    "colors": "^1.4.0",
+    "commander": "^9.0.0",
+    "conf": "^10.1.1",
+    "glob": "^7.2.0"
+  },
+  "bin": {
+    "built": "./build/src/index.js"
+  },
+  "devDependencies": {
+    "@types/node": "^14.11.2",
+    "gts": "^3.1.0",
+    "typescript": "^4.0.3"
+  }
+}
