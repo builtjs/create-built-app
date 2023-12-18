@@ -234,7 +234,7 @@ function installDeps(frontendPath: string) {
   const packagePath = `${frontendPath}/package.json`;
   let pkgData: any = fs.readFileSync(packagePath);
   const pkg = JSON.parse(pkgData);
-  pkg.dependencies = {...pkg.dependencies, ...config};
+  pkg.dependencies = {...pkg.dependencies, ...config.dependencies};
   fs.writeFile(
     packagePath,
     JSON.stringify(pkg, null, 2),
