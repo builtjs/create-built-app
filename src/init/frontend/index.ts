@@ -219,9 +219,11 @@ async function movePages(srcPath: string, type: string, namespace: string) {
   fs.rmSync(`${srcPath}/pages`, {recursive: true, force: true});
   move(Constants.THEME_PAGES_DIR, `${srcPath}/pages`);
   if (appData) {
+    let cssString = `@/styles/index.css`;
     if (type === Constants.TYPES.plugin && namespace) {
-      appData = appData.replace(`@/styles`, `@/styles/${type}s/${namespace}`);
+      cssString = `@/styles/${type}s/${namespace}/index.css`;
     }
+    appData = appData.replace(`@/styles/globals.css`, cssString);
     await fs.promises.writeFile(appPath, appData);
   }
 }
