@@ -7,7 +7,7 @@ export async function installFrontendSite(
   rootDir: string,
   cms: string
 ) {
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<void>(async (resolve, reject) => {
     console.log('Installing frontend..');
 
     const srcPath = `${frontendPath}${rootDir}`;
@@ -40,7 +40,11 @@ export async function installFrontendSite(
       console.log('Root dir 3:' + rootDir !== '' ? `src/` : '');
       pkg.scripts = {
         ...pkg.scripts,
-        ...{setup: `node ${rootDir !== '' ? `src/` : ''}setup/import-data/import-data.js`},
+        ...{
+          setup: `node ${
+            rootDir !== '' ? `src/` : ''
+          }setup/import-data/import-data.js`,
+        },
       };
       fs.writeFile(
         packagePath,
@@ -134,17 +138,21 @@ export async function installFrontendSite(
     }
     let appData: any;
     let appPath: string = `${srcPath}/pages/_app.tsx`;
-    if (!hasAppFile) {
-      appData = fs.readFileSync(appPath);
+    try {
+      if (!hasAppFile) {
+        appData = await fs.promises.readFile(appPath, 'utf8');
+      }
+      fs.rmSync(`${srcPath}/pages`, {recursive: true, force: true});
+      move(`${frontendConfigSrcPath}/pages`, `${srcPath}/pages`);
+      if (appData) {
+        appData = appData.replace(`globals.css`, `index.css`);
+        fs.writeFile(appPath, appData, function (err) {
+          if (err) return console.log(err);
+        });
+      }
+    } catch (error) {
+      // do nothing
     }
-    fs.rmSync(`${srcPath}/pages`, {recursive: true, force: true});
-    move(`${frontendConfigSrcPath}/pages`, `${srcPath}/pages`);
-    if (appData) {
-      fs.writeFile(appPath, appData, function (err) {
-        if (err) return console.log(err);
-      });
-    }
-
     move(`${frontendConfigSrcPath}/pages/api`, `${srcPath}/pages/api`);
 
     fs.rmSync(`${frontendPath}/public`, {recursive: true, force: true});

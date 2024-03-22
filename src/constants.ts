@@ -16,7 +16,7 @@ export namespace Constants {
     sanity: '@sanity/client'
   };
     export const CONFIG_PREFIX = 'config';
-    export const SITE_FRONTEND_DIR = CONFIG_PREFIX + '/frontend';
+    export const SITE_FRONTEND_DIR = CONFIG_PREFIX;
     export const SITE_BACKEND_DIR = CONFIG_PREFIX + '/backend';
     export const THEME_PUBLIC_DIR = CONFIG_PREFIX + '/public';
     export const THEME_PAGES_DIR = CONFIG_PREFIX + '/pages';
