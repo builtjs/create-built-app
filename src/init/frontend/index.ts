@@ -8,7 +8,7 @@ export async function installFrontendSite(
   cms: string
 ) {
   return new Promise<void>(async (resolve, reject) => {
-    console.log('Installing frontend..');
+    console.log('Installing site..');
 
     const srcPath = `${frontendPath}${rootDir}`;
     let frontendConfigPath = Constants.SITE_FRONTEND_DIR;
@@ -36,8 +36,6 @@ export async function installFrontendSite(
       const packagePath = `${frontendPath}/package.json`;
       let pkgData: any = fs.readFileSync(packagePath);
       let pkg = JSON.parse(pkgData);
-      console.log('Root dir 2:' + rootDir);
-      console.log('Root dir 3:' + rootDir !== '' ? `src/` : '');
       pkg.scripts = {
         ...pkg.scripts,
         ...{
@@ -77,8 +75,17 @@ export async function installFrontendSite(
       }
     }
 
-    fs.rmSync(`${srcPath}/styles`, {recursive: true, force: true});
-    move(`${frontendConfigSrcPath}/styles`, `${srcPath}/styles`);
+    try {
+      copyRecursiveSync(
+        `${frontendConfigPath}/README.md`,
+        `${frontendPath}/README.md`
+      );
+    } catch (error) {}
+
+    try {
+      fs.rmSync(`${srcPath}/styles`, {recursive: true, force: true});
+      move(`${frontendConfigSrcPath}/styles`, `${srcPath}/styles`);
+    } catch (error) {}
 
     if (cms === 'sanity') {
       const sanityPath = `${srcPath}/sanity`;

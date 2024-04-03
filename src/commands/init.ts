@@ -92,7 +92,6 @@ async function installSite(dirs: any, cms: string) {
   if (!exists(srcPath)) {
     rootDir = '';
   }
-  console.log('Root dir:' + rootDir);
   await installFrontendSite(frontendPath, rootDir, cms).catch(err => {
     console.error(err);
     return;
