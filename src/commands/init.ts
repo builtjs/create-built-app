@@ -1,7 +1,7 @@
 import * as colors from 'colors';
 import {
   installFrontendSite,
-  installFrontendThemeOrPlugin
+  installFrontendThemeOrPlugin,
 } from '../init/frontend';
 import {installBackendSite} from '../init/backend';
 import * as fs from 'fs';
@@ -47,7 +47,7 @@ function installThemeOrPlugin(dirs: any, type: string) {
   getDep(dirs, Constants.DEPS.next);
   if (!appMap[Constants.DEPS.next]) {
     console.log(
-      'No frontend project found. Did you remember to create it? See README.md for more details.'
+      'No Next.js project found. Did you remember to create it? See README.md for more details.'
     );
     return;
   }
@@ -62,27 +62,10 @@ function installThemeOrPlugin(dirs: any, type: string) {
 
 async function installSite(dirs: any, cms: string) {
   getDep(dirs, Constants.DEPS.next);
-  if (cms === 'strapi') {
-    getDep(dirs, Constants.DEPS.strapi);
-  } else if (cms === 'sanity') {
-    getDep(dirs, Constants.DEPS.sanity);
-  }
+  getDep(dirs, Constants.DEPS.sanity);
   if (!appMap[Constants.DEPS.next]) {
-    if (!appMap[Constants.DEPS.strapi]) {
-      console.log(
-        'No frontend and backend projects found. Did you remember to create them (see README.md for more details)?'
-      );
-      return;
-    }
     console.log(
-      'No frontend project found. Did you remember to create it? See README.md for more details.'
-    );
-    return;
-  }
-
-  if (cms === Constants.CMS.strapi && !appMap[Constants.DEPS.strapi]) {
-    console.log(
-      'No backend project found. Did you remember to create it? See README.md for more details.'
+      'No Next.js found. Did you remember to create it? See README.md for more details.'
     );
     return;
   }
