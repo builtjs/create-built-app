@@ -76,6 +76,24 @@ export async function installFrontendSite(
     }
 
     try {
+      //-> Moving index.d.js file to frontend project
+      copyRecursiveSync(
+        `${frontendConfigPath}/index.d.js`,
+        `${frontendPath}/index.d.js`
+      );
+    } catch (error) {
+      try {
+        //-> Moving next.config.ts file to frontend project
+        copyRecursiveSync(
+          `${frontendConfigPath}/index.d.ts`,
+          `${frontendPath}/index.d.ts`
+        );
+      } catch (error) {
+        console.error('No "index.d" file found. Skipping...');
+      }
+    }
+
+    try {
       copyRecursiveSync(
         `${frontendConfigPath}/README.md`,
         `${frontendPath}/README.md`
