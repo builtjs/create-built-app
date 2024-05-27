@@ -105,6 +105,10 @@ export async function installFrontendSite(
       move(`${frontendConfigSrcPath}/styles`, `${srcPath}/styles`);
     } catch (error) {}
 
+    try {
+      move(`${frontendConfigSrcPath}/lib`, `${srcPath}/lib`);
+    } catch (error) {}
+
     if (cms === 'sanity') {
       const sanityPath = `${srcPath}/sanity`;
       fs.mkdirSync(sanityPath, {recursive: true});
