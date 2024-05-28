@@ -94,24 +94,6 @@ export async function installFrontendSite(
     }
 
     try {
-      //-> Moving index.d.js file to frontend project
-      copyRecursiveSync(
-        `${frontendConfigPath}/builtjs-utils.js`,
-        `${frontendPath}/builtjs-utils.js`
-      );
-    } catch (error) {
-      try {
-        //-> Moving next.config.ts file to frontend project
-        copyRecursiveSync(
-          `${frontendConfigPath}/builtjs-utils.ts`,
-          `${frontendPath}/builtjs-utils.ts`
-        );
-      } catch (error) {
-        console.error('No "builtjs-utils" file found. Skipping...');
-      }
-    }
-
-    try {
       copyRecursiveSync(
         `${frontendConfigPath}/README.md`,
         `${frontendPath}/README.md`
@@ -232,6 +214,24 @@ export async function installFrontendThemeOrPlugin(
         namespace = app.namespace;
       }
     } catch (error) {}
+  }
+
+  try {
+    //-> Moving index.d.js file to frontend project
+    copyRecursiveSync(
+      `${frontendPath}/builtjs-utils.js`,
+      `${srcPath}/builtjs-utils.js`
+    );
+  } catch (error) {
+    try {
+      //-> Moving next.config.ts file to frontend project
+      copyRecursiveSync(
+        `${frontendPath}/builtjs-utils.ts`,
+        `${srcPath}/builtjs-utils.ts`
+      );
+    } catch (error) {
+      console.error('No "builtjs-utils" file found. Skipping...');
+    }
   }
 
   installDeps(frontendPath);
