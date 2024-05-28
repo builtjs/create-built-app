@@ -219,14 +219,14 @@ export async function installFrontendThemeOrPlugin(
   try {
     //-> Moving index.d.js file to frontend project
     copyRecursiveSync(
-      `${frontendPath}/builtjs-utils.js`,
+      `${Constants.CONFIG_PREFIX}}/builtjs-utils.js`,
       `${srcPath}/builtjs-utils.js`
     );
   } catch (error) {
     try {
       //-> Moving next.config.ts file to frontend project
       copyRecursiveSync(
-        `${frontendPath}/builtjs-utils.ts`,
+        `${Constants.CONFIG_PREFIX}/builtjs-utils.ts`,
         `${srcPath}/builtjs-utils.ts`
       );
     } catch (error) {
