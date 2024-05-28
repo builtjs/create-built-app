@@ -219,7 +219,25 @@ export async function installFrontendThemeOrPlugin(
   try {
     //-> Moving index.d.js file to frontend project
     copyRecursiveSync(
-      `${Constants.CONFIG_PREFIX}}/builtjs-utils.js`,
+      `${Constants.CONFIG_PREFIX}/index.d.js`,
+      `${frontendPath}/index.d.js`
+    );
+  } catch (error) {
+    try {
+      //-> Moving next.config.ts file to frontend project
+      copyRecursiveSync(
+        `${Constants.CONFIG_PREFIX}/index.d.ts`,
+        `${frontendPath}/index.d.ts`
+      );
+    } catch (error) {
+      console.error('No "index.d" file found. Skipping...');
+    }
+  }
+
+  try {
+    //-> Moving index.d.js file to frontend project
+    copyRecursiveSync(
+      `${Constants.CONFIG_PREFIX}/builtjs-utils.js`,
       `${srcPath}/builtjs-utils.js`
     );
   } catch (error) {
