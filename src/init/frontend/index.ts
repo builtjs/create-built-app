@@ -252,7 +252,7 @@ export async function installFrontendThemeOrPlugin(
     }
   }
 
-  installDeps(frontendPath);
+  // installDeps(frontendPath);
   move(Constants.THEME_COMPONENTS_DIR, `${srcPath}/components`);
   move(Constants.THEME_LIB_DIR, `${srcPath}/lib`);
   try {
