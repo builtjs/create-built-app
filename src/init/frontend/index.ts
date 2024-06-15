@@ -217,6 +217,34 @@ export async function installFrontendThemeOrPlugin(
   }
 
   try {
+    //-> Moving setup directory to project
+    copyRecursiveSync(`${Constants.CONFIG_PREFIX}/setup`, `${srcPath}/setup`);
+    //update scripts
+    const packagePath = `${frontendPath}/package.json`;
+      let pkgData: any = fs.readFileSync(packagePath);
+      let pkg = JSON.parse(pkgData);
+      pkg.scripts = {
+        ...pkg.scripts,
+        ...{
+          setup: `node ${
+            rootDir !== '' ? `src/` : ''
+          }setup/import-data.js`,
+        },
+      };
+      fs.writeFile(
+        packagePath,
+        JSON.stringify(pkg, null, 2),
+        function writeJSON(err) {
+          if (err) return console.log(err);
+        }
+      );
+  } catch (error) {
+    console.error(
+      'An error occurred when moving the config/setup directory to the frontend project. Are you sure it exists?'
+    );
+  }
+
+  try {
     //-> Moving index.d.js file to frontend project
     copyRecursiveSync(
       `${Constants.CONFIG_PREFIX}/index.d.js`,
@@ -232,6 +260,22 @@ export async function installFrontendThemeOrPlugin(
     } catch (error) {
       console.error('No "index.d" file found. Skipping...');
     }
+  }
+
+  try {
+    //-> Moving tailwind.config.js to frontend project
+    copyRecursiveSync(
+      `${Constants.CONFIG_PREFIX}/tailwind.config.js`,
+      `${frontendPath}/tailwind.config.js`
+    );
+  } catch (error) {
+    try {
+      //-> Moving tailwind.config.ts to frontend project
+      copyRecursiveSync(
+        `${Constants.CONFIG_PREFIX}/tailwind.config.ts`,
+        `${frontendPath}/tailwind.config.ts`
+      );
+    } catch (error) {}
   }
 
   try {
