@@ -293,6 +293,42 @@ export async function installFrontendThemeOrPlugin(
   }
 
   try {
+    fs.rmSync(
+      `${frontendPath}/postcss.config.mjs`
+    );
+  } catch (error) {
+    try {
+      fs.rmSync(
+        `${frontendPath}/postcss.config.ts`
+      );
+    } catch (error) {
+      try {
+        fs.rmSync(
+          `${frontendPath}/postcss.config.js`
+        );
+      } catch (error) {
+        //do nothing
+      }
+    }
+  }
+  
+  try {
+    //-> Moving postcss.config.js to frontend project
+    copyRecursiveSync(
+      `${Constants.CONFIG_PREFIX}/postcss.config.js`,
+      `${frontendPath}/postcss.config.js`
+    );
+  } catch (error) {
+    try {
+      //-> Moving postcss.config.ts to frontend project
+      copyRecursiveSync(
+        `${Constants.CONFIG_PREFIX}/postcss.config.ts`,
+        `${frontendPath}/postcss.config.ts`
+      );
+    } catch (error) {}
+  }
+
+  try {
     //-> Moving index.d.js file to frontend project
     copyRecursiveSync(
       `${Constants.CONFIG_PREFIX}/builtjs-utils.js`,
