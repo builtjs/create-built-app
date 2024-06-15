@@ -263,6 +263,20 @@ export async function installFrontendThemeOrPlugin(
   }
 
   try {
+    fs.rmSync(
+      `${frontendPath}/tailwind.config.ts`
+    );
+  } catch (error) {
+    try {
+      fs.rmSync(
+        `${frontendPath}/tailwind.config.js`
+      );
+    } catch (error) {
+      //do nothing
+    }
+  }
+
+  try {
     //-> Moving tailwind.config.js to frontend project
     copyRecursiveSync(
       `${Constants.CONFIG_PREFIX}/tailwind.config.js`,
