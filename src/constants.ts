@@ -1,4 +1,6 @@
 export namespace Constants {
+  export const API_URL = 'http://localhost';
+  export const CURRENT_API_VERSION = '1.2';
   export const TYPES = {
     site: 'site',
     theme: 'theme',
