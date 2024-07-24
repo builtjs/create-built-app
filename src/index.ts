@@ -3,6 +3,7 @@
 import {program} from 'commander';
 import {init} from './commands/init';
 import {publish} from './commands/publish';
+import {setup} from './commands/setup';
 
 program
   .command('init')
@@ -16,5 +17,9 @@ program
   .option('--type <string>', 'Publish type - theme or plugin')
   .action(publish);
 
+  program
+  .command('setup')
+  .description('Setup theme.')
+  .action(setup);
 
 program.parse();

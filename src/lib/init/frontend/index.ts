@@ -1,6 +1,6 @@
 import * as fs from 'fs';
-import {copyRecursiveSync, exists} from '../../utils';
-import {Constants} from '../../constants';
+import {copyRecursiveSync, exists} from '../../../utils';
+import {Constants} from '../../../constants';
 
 export async function installFrontendSite(
   frontendPath: string,

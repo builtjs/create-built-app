@@ -1,10 +1,26 @@
+// {
+//   "extends": "./node_modules/gts/tsconfig-google.json",
+//   "compilerOptions": {
+//     "moduleResolution": "node",
+//     "target": "ES2020",
+//     "rootDir": ".",
+//     "outDir": "build"
+//   },
+//   "include": ["src/**/*.ts", "test/**/*.ts"]
+// }
 {
-  "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
-    "moduleResolution": "node",
-    "target": "ES2020",
+    "allowJs": true,
+    "checkJs": false,
+    "target": "ES2019",
+    "module": "commonjs",
+    "lib": ["es2019"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "rootDir": ".",
     "outDir": "build"
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts", "apiKeyUtils.d.ts"]
 }

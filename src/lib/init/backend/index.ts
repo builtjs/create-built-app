@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import {copyRecursiveSync} from '../../utils';
+import {copyRecursiveSync} from '../../../utils';
 
 export async function installBackendSite(backendPath: string) {
   console.log('Installing backend...');

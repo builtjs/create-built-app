@@ -2,8 +2,8 @@ import * as colors from 'colors';
 import {
   installFrontendSite,
   installFrontendThemeOrPlugin,
-} from '../init/frontend';
-import {installBackendSite} from '../init/backend';
+} from '../lib/init/frontend';
+import {installBackendSite} from '../lib/init/backend';
 import * as fs from 'fs';
 import {exists} from '../utils';
 import {Constants} from '../constants';

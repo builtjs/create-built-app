@@ -1,8 +1,14 @@
 import axios from 'axios';
-import * as colors from 'colors';
+import {
+  getApiKey, 
+  promptForApiKey,
+  validateApiKey,
+  saveApiKeyToConfig
+} from '../lib/apiKeyUtils';
 import * as fs from 'fs';
 import * as path from 'path';
 import {Constants} from '../constants';
+import {getSrcDir} from '../utils';
 import * as zlib from 'zlib';
 
 interface CombinedData {
@@ -20,37 +26,43 @@ async function publish(options: any) {
     type === Constants.TYPES.theme ||
     type === Constants.TYPES.plugin
   ) {
+
     const publicDir = path.join(process.cwd(), 'public/data');
     if (!fs.existsSync(publicDir)) {
       console.error('The public directory does not exist.');
       process.exit(1);
     }
-    const componentsDir = getSrcDir(['components']);
-    const libDir = getSrcDir(['lib']);
-    const stylesDir = getSrcDir(['styles']);
-    const apiDir = getSrcDir(['pages', 'api']);
+
+    const srcDir = getSrcDir();
+    const componentsDir = `${srcDir}/components`;
+    const libDir = `${srcDir}/lib`;
+    const stylesDir = `${srcDir}/styles`;
+    const apiDir = `${srcDir}/page/api`;
 
     const jsonFiles = getAllFiles(publicDir).filter(file =>
       file.endsWith('.json')
     );
-    const componentFiles = getAllFiles(componentsDir);
-    const libFiles = getAllFiles(libDir);
-    const stylesFiles = getAllFiles(stylesDir);
-    const apiFiles = getAllFiles(apiDir);
-
     const combinedData: CombinedData = {
       data: {},
       components: {},
       lib: {},
       styles: {},
-      api: {},
+      api: {}
     };
 
     // Collect data
     collectData(publicDir, jsonFiles, combinedData.data, true);
+
+    const componentFiles = getAllFiles(componentsDir);
     collectData(componentsDir, componentFiles, combinedData.components);
+
+    const libFiles = getAllFiles(libDir);
     collectData(libDir, libFiles, combinedData.lib);
+
+    const stylesFiles = getAllFiles(stylesDir);
     collectData(stylesDir, stylesFiles, combinedData.styles);
+
+    const apiFiles = getAllFiles(apiDir);
     collectData(apiDir, apiFiles, combinedData.api);
 
     // Compress combinedData before sending
@@ -68,25 +80,26 @@ async function publish(options: any) {
   }
 }
 
-function getSrcDir(pathSegments: string[]): string {
-  const dirs = [
-    path.join(process.cwd(), ...pathSegments),
-    path.join(process.cwd(), 'src', ...pathSegments),
-  ];
-
-  let directory: string | undefined;
-  for (const dir of dirs) {
-    if (fs.existsSync(dir)) {
-      directory = dir;
-      break;
-    }
-  }
-  if (!directory) {
-    console.error('The components directory does not exist.');
-    process.exit(1);
-  }
-  return directory;
-}
+// function collectData(
+//   baseDir: string,
+//   files: string[],
+//   targetObject: {[key: string]: any},
+//   isJson: boolean = false
+// ): void {
+//   for (const file of files) {
+//     let {relativePath, fileContent} = getFile(baseDir, file);
+//     if(!relativePath || !fileContent){
+//       continue;
+//     }
+//     // const relativePath = sanitizeFilePath(path.relative(baseDir, file));
+//     // if (!isValidFileType(relativePath) || !isFileSizeValid(file)) {
+//     //   console.warn(`Skipping invalid or large file: ${relativePath}`);
+//     //   continue;
+//     // }
+//     // const fileContent = fs.readFileSync(file, 'utf8');
+//     targetObject[relativePath] = isJson ? JSON.parse(fileContent) : fileContent;
+//   }
+// }
 
 function collectData(
   baseDir: string,
@@ -95,14 +108,30 @@ function collectData(
   isJson: boolean = false
 ): void {
   for (const file of files) {
-    const relativePath = sanitizeFilePath(path.relative(baseDir, file));
-    if (!isValidFileType(relativePath) || !isFileSizeValid(file)) {
-      console.warn(`Skipping invalid or large file: ${relativePath}`);
+    const result = getFile(baseDir, file);
+    if (!result) {
       continue;
     }
-    const fileContent = fs.readFileSync(file, 'utf8');
+    const {relativePath, fileContent} = result;
     targetObject[relativePath] = isJson ? JSON.parse(fileContent) : fileContent;
   }
+}
+
+function getFile(baseDir: string, file: any) {
+  const relativePath = sanitizeFilePath(path.relative(baseDir, file));
+  if (!isValidFileType(relativePath) || !isFileSizeValid(file)) {
+    console.warn(`Skipping invalid or large file: ${relativePath}`);
+    return null;
+  }
+  let fileContent = null;
+  try {
+    fileContent = fs.readFileSync(file, 'utf8');
+  } catch (error) {
+    console.error(`Error: Unable to read directory: ${file}`);
+    process.exit(1);
+  }
+
+  return {relativePath, fileContent};
 }
 
 function sanitizeFilePath(filePath: string): string {
@@ -136,244 +165,162 @@ function compressData(data: CombinedData): Buffer {
 }
 
 export async function sendRequest(type: string, data: Buffer): Promise<void> {
-  // const d = JSON.stringify({key: 'value', anotherKey: 'anotherValue'});
+  try {
+    let apiKey = await getApiKey();
+  if (!apiKey) {
+    console.error('Unable to process API key.');
+    process.exit(1);
+  }
 
-  // zlib.gzip(d, async (err, compressedData) => {
-  //   if (err) {
-  //     console.error('Error gzipping data:', err);
-  //     return;
-  //   }
+  const isValid = await validateApiKey(apiKey);
+  if (!isValid) {
+    console.error('Invalid API key.');
+    process.exit(1);
+  }
+  await saveApiKeyToConfig(apiKey);
 
-  //   try {
-  //     const response = await axios.post(
-  //       `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/${type}s/publish`,
-  //       compressedData,
-  //       {
-  //         headers: {
-  //           'Content-Type': 'application/gzip',
-  //           'Content-Encoding': 'gzip',
-  //           'Content-Length': compressedData.length,
-  //           'x-name': 'test-name',
-  //         },
-  //       }
-  //     );
+    try {
+      const response = await axios.post(
+        `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/${type}s/publish`,
+        data,
+        {
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'Content-Encoding': 'gzip',
+            'x-api-key': apiKey,
+          },
+        }
+      );
 
-  //     console.log('Server response:', response.data);
-  //   } catch (error) {
-  //     console.error('Error sending gzipped data:', error);
-  //   }
-  // });
+      if (response.data && response.data.success && response.data.url) {
+        console.log(
+          `Your ${type} has been ${
+            response.data.action === 'create' ? 'published' : 'updated'
+          } in Built Studio!\nView the plugin at: ${response.data.url}`
+        );
+      } else {
+        console.error(`Failed to publish ${type}.`);
+      }
+    } catch (error: any) {
+      console.error('Failed to publish:', error.message);
 
+      if (error.response) {
+        if (error.response.data.message) {
+          let msg = error.response.data.message;
+          if (error.response.data.docsUrl) {
+            msg += ` Find out more at ${error.response.data.docsUrl}.`;
+          }
+          console.error(msg);
 
-
-  
-
-  // try {
-  //   let d = {
-  //     key: 'value',
-  //     anotherKey: 'anotherValue',
-  //   };
-  //   const compressedData = zlib.gzipSync(JSON.stringify(d));
-  //   const response = await axios.post(
-  //     `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/${type}s/publish`,
-  //     compressedData,
-  //     // zlib.gzipSync(JSON.stringify({
-  //     //   key: 'value',
-  //     //   anotherKey: 'anotherValue'
-  //     // })),
-  //     //data,
-  //     {
-  //       headers: {
-  //         'Content-Type': 'application/gzip',
-  //         'Content-Encoding': 'gzip',
-  //         'Content-Length': compressedData.length,
-  //         // 'Authorization': `Bearer ${yourAuthToken}` // Ensure yourAuthToken is securely managed
-  //         'x-name': 'test-name',
-  //       },
-  //     }
-  //   );
-
-  //   if (response.status === 200) {
-  //     console.log('Successfully uploaded files.');
-  //   } else {
-  //     throw new Error(`Failed with status code: ${response.status}`);
-  //   }
-  // } catch (error) {
-  //   if (axios.isAxiosError(error) && error.response) {
-  //     throw new Error(
-  //       `Failed with status code: ${
-  //         error.response.status
-  //       }, response: ${JSON.stringify(error.response.data)}`
-  //     );
-  //   } else {
-  //     throw error;
-  //   }
-  // }
-
-
-
-  // try {
-  //   const data = {
-  //     key: 'value',
-  //     anotherKey: 'anotherValue',
-  //   };
-
-  //   const compressedData = zlib.gzipSync(JSON.stringify(data));
-
-  //   const response = await axios.post(
-  //     `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/${type}s/publish`,
-  //     compressedData,
-  //     {
-  //       headers: {
-  //         'Content-Type': 'application/gzip',
-  //         'Content-Encoding': 'gzip',
-  //         'Content-Length': compressedData.length,
-  //         'x-name': 'test-name',
-  //       },
-  //     }
-  //   );
-
-  //   if (response.status === 200) {
-  //     console.log('Successfully uploaded files.');
-  //   } else {
-  //     throw new Error(`Failed with status code: ${response.status}`);
-  //   }
-  // } catch (error) {
-  //   if (axios.isAxiosError(error) && error.response) {
-  //     throw new Error(
-  //       `Failed with status code: ${
-  //         error.response.status
-  //       }, response: ${JSON.stringify(error.response.data)}`
-  //     );
-  //   } else {
-  //     throw error;
-  //   }
-  // }
-
-
-//   const d = {
-//     key: 'value',
-//     anotherKey: 'anotherValue',
-//   };
-
-//   // Compress the data
-//   const compressedData = zlib.gzipSync(JSON.stringify(d));
-
-//   console.log('Compressed data:', compressedData);
-// // Write compressed data to a file for manual verification
-// fs.writeFileSync('compressedData.gz', compressedData);
+          if (error.response.data.message === 'Invalid API key') {
+            apiKey = await promptForApiKey();
+          }
+        }
+      }
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+// export async function sendRequest(type: string, data: Buffer): Promise<void> {
 //   try {
-//     const response = await axios.post(
-//       `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/${type}s/publish`, // Update with your server URL
-//       compressedData,
-//       {
-//         headers: {
-//           'Content-Type': 'application/gzip',
-//           'Content-Encoding': 'gzip',
-//           'Content-Length': compressedData.length,
-//           'x-name': 'test-name',
-//         },
-//       }
-//     );
+//     let apiKey = await readApiKeyFromConfig();
 
-//     console.log('Successfully uploaded files.');
-//   } catch (error) {
-//     console.error('Error sending data:', error);
-//   }
-
-// try {
-//   let d = {
-//     key: 'value',
-//     anotherKey: 'anotherValue',
-//   };
-//   const compressedData = zlib.gzipSync(JSON.stringify(d));
-
-//   console.log('Compressed data:', compressedData);
-
-//   const response = await axios.post(
-//     'http://localhost/v1.2/plugins/publish',
-//     compressedData,
-//     {
-//       headers: {
-//         'Content-Type': 'application/gzip',
-//         'Content-Encoding': 'gzip',
-//         'Content-Length': compressedData.length,
-//       },
+//     if (!apiKey) {
+//       apiKey = await promptForApiKey();
 //     }
-//   );
+//     console.log('Sending request to',`${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/${type}s/publish`)
+//     console.log({data})
+//     try {
+//       const response = await axios.post(
+//         `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/${type}s/publish`,
+//         { data, apiKey },
+//         {
+//           headers: {
+//             'Content-Type': 'application/gzip',
+//             'Content-Encoding': 'gzip',
+//           },
+//         }
+//       );
+//       if (response.data && response.data.success && response.data.url) {
+//         console.log(
+//           `Your plugin has been ${
+//             response.data.action === 'create' ? 'published' : 'updated'
+//           } in Built Studio!\nView the plugin at: ${response.data.url}`
+//         );
+//       }else{
+//         console.error(`Failed to publish.`);
+//       }
+//       // const gzippedData = zlib.gzipSync(JSON.stringify({ data, apiKey }));
+//       console.log({data})
+//     // axios
+//     //   .post(
+//     //     `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/${type}s/publish`,
+//     //     {data:data, apiKey:apiKey},
+//     //     {
+//     //       headers: {
+//     //         'Content-Type': 'application/gzip',
+//     //         'Content-Encoding': 'gzip',
+//     //     // 'Content-Length': gzippedData.length,
+//     //       },
+//     //     }
+//     //   )
+//     //   .then(response => {
+//     //     if (response.data && response.data.success && response.data.url) {
+//     //       console.log(
+//     //         `Your plugin has been ${
+//     //           response.data.action === 'create' ? 'published' : 'updated'
+//     //         } in Built Studio!\nView the plugin at: ${response.data.url}`
+//     //       );
+//     //     }
+//     //   })
+//     //   .catch(error => {
+//     //     console.error('Error sending data:', error);
+//     //   });
+//     } catch (error: any) {
+//       console.error(`Failed to publish:`, error.message);
 
-//   console.log('Response:', response.data);
-// } catch (error) {
-//   console.error('Error:', error);
+//       if (error.response) {
+//         if(error.response.data.message){
+//           let msg = error.response.data.message;
+//           if(error.response.data.docsUrl){
+//             msg += ` Find out more at ${error.response.data.docsUrl}.`;
+//           }
+//           console.error(msg);
+//           if(error.response.data.message === 'Invalid API key'){
+//             apiKey = await promptForApiKey();
+//           }
+//         }
+//       }
+//       process.exit(1);
+//     }
+//   } catch (error) {
+//     console.error('Error:', error);
+//   }
 // }
 
-
-try {
-  // const data = JSON.stringify({ key: 'value' }); // Example JSON data
-
-  // Gzip the data
-  // zlib.gzip(data, (err, gzippedData) => {
-  //   if (err) {
-  //     console.error('Error gzipping data:', err);
-  //   } else {
-      // Send gzipped data to the server
-      axios.post(`${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/${type}s/publish`, data, {
-        headers: {
-          'Content-Type': 'application/gzip', // Original MIME type of the data
-          'Content-Encoding': 'gzip', // Indicating the data is gzipped
-        }
-      })
-      .then(response => {
-        console.log('Server response:', response.data);
-        if(response.data && response.data.success && response.data.url){
-          console.log(`Your plugin has been ${response.data.action === 'create' ? 'published' : 'updated'} in Built Studio!\nView the plugin at: ${colors.blue.underline(response.data.url)}\n`);
-        }
-      })
-      .catch(error => {
-        console.error('Error sending data:', error);
-      });
-    // }
-  // });
-
-
-
-//   let data = {
-//     key: 'value',
-//     anotherKey: 'anotherValue',
-//   };
-//   const compressedData = zlib.gzipSync(JSON.stringify(data));
-//   const base64Data = compressedData.toString('base64');
-
-//   console.log('Base64 Compressed data:', base64Data);
-
-//   const response = await axios.post(
-//     `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/${type}s/publish`,
-//     base64Data,
-//     {
-//       headers: {
-//         'Content-Type': 'application/gzip',
-//         'Content-Encoding': 'gzip',
-//         'Content-Length': Buffer.byteLength(base64Data),
-//       },
-//     }
-//   );
-
-//   console.log('Response:', response.data);
-} catch (error) {
-  console.error('Error:', error);
-}
-}
-
-function getAllFiles(dirPath: string, files: string[] = []): string[] {
-  const entries = fs.readdirSync(dirPath, {withFileTypes: true});
-
-  for (const entry of entries) {
-    const fullPath = path.join(dirPath, entry.name);
-    if (entry.isDirectory()) {
-      getAllFiles(fullPath, files);
-    } else if (entry.isFile()) {
-      files.push(fullPath);
+function getAllFiles(
+  dirPath: string,
+  files: string[] = [],
+  required: boolean = false
+): string[] {
+  try {
+    const entries = fs.readdirSync(dirPath, {withFileTypes: true});
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+      if (entry.isDirectory()) {
+        getAllFiles(fullPath, files);
+      } else if (entry.isFile()) {
+        files.push(fullPath);
+      }
     }
+  } catch (error) {
+    if (required) {
+      console.error(`Error: Unable to read directory: ${dirPath}`);
+      process.exit(1);
+    }
+    return [];
   }
 
   return files;

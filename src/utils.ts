@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 /**
- * Look ma, it's cp -R.
+ * Recursively copy into new destination.
  * @param {string} src  The path to the thing to copy.
  * @param {string} dest The path to the new copy.
  */
@@ -25,3 +25,33 @@ export function copyRecursiveSync(src: string, dest: string) {
 export function exists(src: string) {
   return fs.existsSync(src);
 }
+
+export function getSrcDir(): string {
+  const dirs = [
+    path.join(process.cwd(), 'src'),
+    process.cwd()
+  ];
+  let directory: string = '';
+  for (const dir of dirs) {
+    if (fs.existsSync(dir)) {
+      directory = dir;
+      break;
+    }
+  }
+  return directory;
+}
+
+// export function getSrcDir(pathSegments?: string[]): string {
+//   const dirs = [
+//     pathSegments ? path.join(process.cwd(), 'src', ...pathSegments) : path.join(process.cwd(), 'src'),
+//     pathSegments ? path.join(process.cwd(), ...pathSegments) : process.cwd()
+//   ];
+//   let directory: string = '';
+//   for (const dir of dirs) {
+//     if (fs.existsSync(dir)) {
+//       directory = dir;
+//       break;
+//     }
+//   }
+//   return directory;
+// }
