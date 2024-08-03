@@ -48,6 +48,7 @@ export async function validateApiKey(apiKey) {
     return response.data.apiKey.isValid;
   } catch (error) {
     console.error('Error validating API key');
+    promptForApiKey();
     return false;
   }
 }

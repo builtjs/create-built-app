@@ -432,12 +432,6 @@ function getInvalidThemeError() {
   if (!exists(Constants.THEME_PUBLIC_DIR)) {
     msg += `${Constants.errorMessages.PUBLIC_NOT_FOUND} `;
   }
-  if (!exists(Constants.THEME_PAGES_DIR)) {
-    msg += `${Constants.errorMessages.PAGES_NOT_FOUND} `;
-  }
-  if (!exists(Constants.THEME_COMPONENTS_DIR)) {
-    msg += `${Constants.errorMessages.COMPONENTS_NOT_FOUND} `;
-  }
   if (!exists(Constants.THEME_LIB_DIR)) {
     msg += `${Constants.errorMessages.LIB_NOT_FOUND} `;
   }

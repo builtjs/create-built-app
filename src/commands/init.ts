@@ -1,4 +1,3 @@
-import * as colors from 'colors';
 import {
   installFrontendSite,
   installFrontendThemeOrPlugin,
@@ -84,7 +83,7 @@ async function installSite(dirs: any, cms: string) {
     installBackendSite(appMap[Constants.DEPS.strapi]);
   }
 
-  console.log(colors.green('Done!'));
+  console.log('Done!');
 }
 
 function getDep(dirs: [], dep: string) {

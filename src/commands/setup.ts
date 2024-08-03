@@ -4,9 +4,8 @@ import {
   getApiKey,
   promptForApiKey,
   validateApiKey,
-  saveApiKeyToConfig
+  saveApiKeyToConfig,
 } from '../lib/apiKeyUtils';
-// import ensureValidApiKey from '../lib/';
 import {Constants} from '../constants';
 import {promises as fs} from 'fs';
 import * as path from 'path';
@@ -48,54 +47,10 @@ async function isTheme(): Promise<Theme | null> {
   }
 }
 
-// async function setupPlugins(theme: Theme): Promise<{
-//   successfulSetups: SetupResult[];
-//   failedSetups: SetupResult[];
-// } | null> {
-//   if (theme) {
-//     if (!theme.plugins) {
-//       return null;
-//     }
-//     const plugins = theme.plugins;
-//     console.log('plugins...', plugins);
-//     const requests = plugins.map(namespace => {
-//       const url = `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/themes/setup`;
-//       return axios
-//         .post(url, {namespace})
-//         .then(response => ({namespace, data: response.data}))
-//         .catch(error => {
-//           console.error(
-//             `Failed to setup plugin for namespace ${namespace}:`,
-//             error
-//           );
-//           return {namespace, error};
-//         });
-//     });
-
-//     const results: SetupResult[] = await Promise.all(requests);
-
-//     const successfulSetups = results.filter(result => !result.error);
-//     const failedSetups = results.filter(result => result.error);
-
-//     if (successfulSetups.length > 0) {
-//       console.log('Plugins setup successfully:', successfulSetups);
-//     }
-
-//     if (failedSetups.length > 0) {
-//       console.error('Failed to setup the following plugins:');
-//       failedSetups.forEach(result => {
-//         console.error(`Namespace: ${result.namespace}`, result.error);
-//       });
-//     }
-
-//     return {successfulSetups, failedSetups};
-//   } else {
-//     console.log('This is not a theme (there is no theme.json file).');
-//     return null;
-//   }
-// }
-
-async function setupPlugins(theme: Theme, apiKey: string): Promise<{
+async function setupPlugins(
+  theme: Theme,
+  apiKey: string
+): Promise<{
   successfulSetups: SetupResult[];
   failedSetups: SetupResult[];
 } | null> {
@@ -105,40 +60,23 @@ async function setupPlugins(theme: Theme, apiKey: string): Promise<{
     }
     const plugins = theme.plugins;
 
-    // const requests = plugins.map(async namespace => {
-    //   const url = `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/themes/setup`;
-
-    //   return axios
-    //     .post(url, {
-    //       apiKey,
-    //       namespace,
-    //     })
-    //     .then(response => ({namespace, data: response.data}))
-    //     .catch(error => {
-    //       console.error(
-    //         `Failed to setup plugin for namespace ${namespace}:`,
-    //         error
-    //       );
-    //       return {namespace, error};
-    //     });
-    // });
-    const requests = plugins.map(async (namespace) => {
+    const requests = plugins.map(async namespace => {
       const url = `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/themes/setup`;
-  
+
       try {
-        const response = await axios.post(url, { apiKey, namespace });
-        return { namespace, data: response.data };
+        const response = await axios.post(url, {apiKey, namespace});
+        return {namespace, data: response.data};
       } catch (error: any) {
         console.error(`Failed to setup plugin for namespace ${namespace}:`);
-  
+
         if (error.response) {
-          if(error.response.data.message){
+          if (error.response.data.message) {
             let msg = error.response.data.message;
-            if(error.response.data.docsUrl){
+            if (error.response.data.docsUrl) {
               msg += ` Find out more at ${error.response.data.docsUrl}.`;
             }
             console.error(msg);
-            if(error.response.data.message === 'Invalid API key'){
+            if (error.response.data.message === 'Invalid API key') {
               apiKey = await promptForApiKey();
             }
           }
@@ -155,13 +93,6 @@ async function setupPlugins(theme: Theme, apiKey: string): Promise<{
     if (successfulSetups.length > 0) {
       console.log('Plugins setup successfully:', successfulSetups);
     }
-
-    // if (failedSetups.length > 0) {
-    //   console.error('Failed to setup the following plugins:');
-    //   failedSetups.forEach(result => {
-    //     console.error(`Namespace: ${result.namespace}`, result.error);
-    //   });
-    // }
 
     return {successfulSetups, failedSetups};
   } else {
@@ -303,8 +234,9 @@ async function setup() {
           combinedSectionPositionData,
           sectionPositionData
         );
-
-        console.log({combinedSectionPositionData});
+        combinedSectionPositionData = orderSections(
+          combinedSectionPositionData
+        );
         try {
           let templateLayoutCode = getLayoutSectionSlotCode();
           updatedThemeLayoutFileContent = updatedThemeLayoutFileContent.replace(
@@ -328,13 +260,11 @@ async function setup() {
             );
           }
 
-          // try {
           const formattedCode = await prettier.format(updatedContent, {
             parser: language,
           });
           const dir = path.dirname(builtLayoutFilePath);
 
-          // Ensure the directory exists
           await fs.mkdir(dir, {recursive: true});
           await fs.writeFile(builtLayoutFilePath, formattedCode, null);
         } catch (error) {
@@ -351,6 +281,30 @@ async function setup() {
       console.error('An error occurred during setup:', error);
     });
 }
+
+interface Positions {
+  [key: string]: number;
+}
+
+interface Sections {
+  [section: string]: Positions;
+}
+
+const orderSections = (sections: Sections): Sections => {
+  const orderedSections: Sections = {};
+
+  Object.keys(sections).forEach(section => {
+    const positions = sections[section];
+    orderedSections[section] = Object.keys(positions)
+      .sort((a, b) => positions[a] - positions[b])
+      .reduce((acc, key) => {
+        acc[key] = positions[key];
+        return acc;
+      }, {} as Positions);
+  });
+
+  return orderedSections;
+};
 
 interface ModulePage {
   name: string;
@@ -440,7 +394,6 @@ async function transformPluginData(
     global: {},
   };
   let sectionPositionData = {};
-  console.log('results...', results);
   await Promise.all(
     results.successfulSetups.map(async (setup: SetupResult) => {
       if (setup.data.filesData && setup.data.layoutData) {
@@ -548,9 +501,7 @@ async function getThemeData(): Promise<Data> {
     path.join(dataPath, 'templates.json')
   );
   const globalData = await readJsonFile(path.join(dataPath, 'global.json'));
-  console.log({globalData});
   const layoutData = await readJsonFile(path.join(dataPath, 'layout.json'));
-  console.log({layoutData});
 
   const themeData: Data = {
     contentTypes: contentTypesData.contentTypes || [],
@@ -562,7 +513,6 @@ async function getThemeData(): Promise<Data> {
     collections: {},
   };
 
-  console.log({themeData});
   return themeData;
 }
 
@@ -574,26 +524,25 @@ async function createMergedData(
   const dataPath = 'public/data';
   const themeData = await getThemeData();
   const mergedData: Data = mergeData(themeData, pluginsData);
-  let mergedPages: Page[] = [];
+  let updatedPages = themeData.pages;
   if (Object.keys(pluginsData).length > 0) {
     // Handle the merging of pages separately
-    pluginsData.pages.map((existingPage: Page) => {
+    updatedPages = pluginsData.pages.map((existingPage: Page) => {
       const newPage = themeData.pages.find(
         (page: Page) => page.name === existingPage.name
       );
       if (newPage) {
         // Create demoSections based on sectionPositions
-        console.log('theme page...', newPage.name);
         const positions = pageSections[existingPage.name] || {};
-        console.log('positions...', positions);
-        const demoSections = Object.keys(positions).map(name => ({name}));
+        const demoSections = Object.keys(positions)
+          .map(name => ({name}))
+          .sort((a, b) => positions[a.name] - positions[b.name]);
         return {...existingPage, ...newPage, demoSections};
       }
       return existingPage;
     });
   }
-
-  const updatedPages = updatePages(themeData, mergedPages, pageSections);
+  updatedPages = updatePages(themeData, updatedPages, pageSections);
   mergedData.pages = updatedPages;
 
   // Ensure collections data is properly merged
@@ -729,7 +678,6 @@ async function writePluginFiles(
   await Promise.all(writeTasks);
 
   const transformedData: Data = transformData(data.data, namespace);
-  console.log(JSON.stringify(transformedData));
   return transformedData;
 }
 
