@@ -21,9 +21,8 @@ interface CombinedData {
 }
 
 async function publish(options: any) {
-  let {type = 'theme'} = options;
+  let {type = Constants.TYPES.theme} = options;
   if (
-    !type ||
     type === Constants.TYPES.theme ||
     type === Constants.TYPES.plugin
   ) {
