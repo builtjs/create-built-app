@@ -52,27 +52,6 @@ files?: Record<string, FileData | FileData[]>
           }
         }
       }
-      // for (const [key, file] of Object.entries(files)) {
-      //   const [, contentSectionIndex, name] = key.split('.');
-      //   const filePath = file.path;
-      //   // Import image asset
-      //   const imageAsset = await client.assets.upload(
-      //     'image',
-      //     createReadStream(filePath)
-      //   );
-      //   const sectionIndex = parseInt(contentSectionIndex, 10);
-      //   const section = data.sections[sectionIndex];
-      //   if (section) {
-      //     const asset = {
-      //       _type: 'image',
-      //       asset: {
-      //         _ref: imageAsset._id,
-      //         _type: 'reference',
-      //       },
-      //     };
-      //     section[name] = asset;
-      //   }
-      // }
     }
 
     try {

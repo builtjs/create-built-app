@@ -21,38 +21,43 @@ interface CombinedData {
 }
 
 async function publish(options: any) {
-  let {type = Constants.TYPES.theme} = options;
-  if (
-    type === Constants.TYPES.theme ||
-    type === Constants.TYPES.plugin
-  ) {
-    const publicDir = path.join(process.cwd(), 'public/data');
-    if (!fs.existsSync(publicDir)) {
-      console.error('The public directory does not exist.');
+  const publicDir = path.join(process.cwd(), 'public/data');
+  if (!fs.existsSync(publicDir)) {
+    console.error('The public directory does not exist.');
+    process.exit(1);
+  }
+
+  const srcDir = getSrcDir();
+  const componentsDir = `${srcDir}/components`;
+  const libDir = `${srcDir}/lib`;
+  const stylesDir = `${srcDir}/styles`;
+  const apiDir = `${srcDir}/pages/api`;
+
+  const jsonFiles = getAllFiles(publicDir).filter(file =>
+    file.path.endsWith('.json')
+  );
+  const combinedData: CombinedData = {
+    data: {},
+    components: {},
+    lib: {},
+    styles: {},
+    api: {},
+    config: {},
+  };
+
+  collectData(publicDir, jsonFiles, combinedData.data, true);
+  let type = null;
+  if (combinedData.data['theme.json']) {
+    type = Constants.TYPES.theme;
+  } else if (combinedData.data['plugin.json']) {
+      type = Constants.TYPES.plugin;
+    }else {
+      console.error(
+        'Project is neither a theme nor plugin. No theme.json or plugin.json file found.'
+      );
       process.exit(1);
     }
-
-    const srcDir = getSrcDir();
-    const componentsDir = `${srcDir}/components`;
-    const libDir = `${srcDir}/lib`;
-    const stylesDir = `${srcDir}/styles`;
-    const apiDir = `${srcDir}/pages/api`;
-
-    const jsonFiles = getAllFiles(publicDir).filter(file =>
-      file.path.endsWith('.json')
-    );
-    const combinedData: CombinedData = {
-      data: {},
-      components: {},
-      lib: {},
-      styles: {},
-      api: {},
-      config: {},
-    };
-
-    // Collect data
-    collectData(publicDir, jsonFiles, combinedData.data, true);
-
+    
     const componentFiles = getAllFiles(componentsDir);
     collectData(componentsDir, componentFiles, combinedData.components);
 
@@ -79,10 +84,11 @@ async function publish(options: any) {
         console.error('Failed to upload data and components:', error);
       }
     }
-  }
+  
 }
 
-function collectAllConfigData(data: CombinedData, srcDir:string) {
+
+function collectAllConfigData(data: CombinedData, srcDir: string) {
   const files = [
     {path: 'tailwind.config.js', required: true},
     {path: 'postcss.config.js', required: true},
@@ -92,7 +98,9 @@ function collectAllConfigData(data: CombinedData, srcDir:string) {
     {path: `${srcDir}/pages/_app.tsx`, required: true},
     {path: `${srcDir}/pages/_document.tsx`, required: false},
   ];
-  files.map(file => collectConfigData(file, '', data, file.path.endsWith('.json')));
+  files.map(file =>
+    collectConfigData(file, '', data, file.path.endsWith('.json'))
+  );
 }
 
 function collectData(
@@ -147,7 +155,7 @@ function getFile(baseDir: string, file: FileObject) {
   const sanitizedPath = sanitizeFilePath(path.relative(baseDir, file.path));
   if (!isValidFileType(sanitizedPath) || !isFileSizeValid(file)) {
     console.warn(`Skipping invalid or large file: ${sanitizedPath}`);
-    return { relativePath: null, fileContent: null };
+    return {relativePath: null, fileContent: null};
   }
   let fileContent = null;
   try {
@@ -158,8 +166,6 @@ function getFile(baseDir: string, file: FileObject) {
       if (file.required) {
         console.error(`Error: Required file not found: ${file.path}`);
         process.exit(1);
-      } else {
-        console.warn(`Warning: Optional file not found: ${file.path}`);
       }
     } else {
       console.error(`Error: Unable to read file: ${file.path}`, error);
@@ -167,7 +173,7 @@ function getFile(baseDir: string, file: FileObject) {
     }
   }
   let relativePath = removeSubstringFromStart(sanitizedPath, 'src/');
-  return { relativePath, fileContent };
+  return {relativePath, fileContent};
 }
 
 // function getFile(baseDir: string, file: any) {
@@ -200,6 +206,7 @@ function isValidFileType(fileName: string): boolean {
     '.jsx',
     '.tsx',
     '.md',
+    '.example',
   ];
   const fileExtension = path.extname(fileName).toLowerCase();
   return allowedExtensions.includes(fileExtension);
@@ -211,7 +218,6 @@ function isValidFileType(fileName: string): boolean {
 //   return stats.size <= maxSize;
 // }
 
-
 function isFileSizeValid(file: FileObject): boolean {
   try {
     const stats = fs.statSync(file.path);
@@ -221,10 +227,12 @@ function isFileSizeValid(file: FileObject): boolean {
     const nodeError = error as NodeJsError;
     if (nodeError.code === 'ENOENT') {
       if (file.required) {
-        console.error(`Error: Required file not found when checking size: ${file.path}`);
+        console.error(
+          `Error: Required file not found: ${file.path}`
+        );
         process.exit(1);
       } else {
-        console.warn(`Warning: Optional file not found when checking size: ${file.path}`);
+        return true;
       }
     } else {
       console.error(`Error: Unable to check file size: ${file.path}`, error);
@@ -284,7 +292,7 @@ export async function sendRequest(type: string, data: Buffer): Promise<void> {
         if (error.response.data.message) {
           let msg = error.response.data.message;
           if (error.response.data.docsUrl) {
-            msg += ` Find out more at ${error.response.data.docsUrl}.`;
+            msg += `. Find out more at https://docs.builtjs.com/${error.response.data.docsUrl}`;
           }
           console.error(msg);
 
@@ -312,7 +320,7 @@ function getAllFiles(
       if (entry.isDirectory()) {
         getAllFiles(fullPath, files);
       } else if (entry.isFile()) {
-        files.push({path:fullPath, required:true});
+        files.push({path: fullPath, required: true});
       }
     }
   } catch (error) {

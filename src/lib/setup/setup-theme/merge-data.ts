@@ -64,7 +64,7 @@ export type Data = {
   collections: Collection;
 };
 
-function mergeArrays<T extends {name: string}>(
+function mergeArrays<T extends { name: string; namespace?: string }>(
   arr1: T[],
   arr2: T[]
 ): T[] {
@@ -74,7 +74,10 @@ function mergeArrays<T extends {name: string}>(
     if (index === -1) {
       merged.push(item2);
     } else {
-      merged[index] = {...merged[index], ...item2};
+      // Exclude the "namespace" field when merging
+      const { namespace, ...rest } = item2;
+      merged[index] = { ...merged[index], ...rest };
+      // merged[index] = {...merged[index], ...item2};
     }
   });
   return merged;

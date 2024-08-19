@@ -19,8 +19,12 @@ program
 
   program
   .command('setup')
-  .description('Setup theme.')
-  .option('--type <string>', 'Install type - site or theme')
+  .description('Setup site.')
+  .action(setup);
+
+  program
+  .command('update')
+  .description('Update theme.')
   .action(setup);
 
 program.parse();

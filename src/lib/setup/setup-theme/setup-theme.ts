@@ -75,7 +75,7 @@ interface PageSectionData {
   };
 }
 
-export async function setupThemeData(theme: Theme) {
+export async function updateTheme(theme?: Theme | null) {
   let apiKey = await getApiKey();
   if (!apiKey) {
     console.error('Unable to process API key.');
@@ -165,7 +165,6 @@ export async function setupThemeData(theme: Theme) {
     );
     process.exit(1);
   }
-  console.log({transformedThemeLayoutFileContent});
   if (!transformedThemeLayoutFileContent) {
     console.error(
       `Error: Theme layout file does not contain slots: ${componentsPath}/layout.${ext}`
@@ -312,13 +311,13 @@ async function setupPlugins(
         const response = await axios.post(url, {apiKey, namespace});
         return {namespace, data: response.data};
       } catch (error: any) {
-        console.error(`Failed to setup plugin for namespace ${namespace}:`);
+        console.error(`Failed to setup plugin for namespace ${namespace}.`);
 
         if (error.response) {
           if (error.response.data.message) {
             let msg = error.response.data.message;
             if (error.response.data.docsUrl) {
-              msg += ` Find out more at ${error.response.data.docsUrl}.`;
+              msg += `. Find out more at https://docs.builtjs.com/${error.response.data.docsUrl}.`;
             }
             console.error(msg);
             if (error.response.data.message === 'Invalid API key') {
@@ -387,6 +386,7 @@ async function transformPluginData(
             outputPath,
             srcDir
           );
+
 
           combinedData = _.mergeWith(
             {},
@@ -531,7 +531,7 @@ function transformData(data: InputData, namespace: string): Data {
     ) {
       if (newKey === 'sections' && value.sections) {
         Object.keys(value.sections).forEach(sectionName => {
-          value.sections![sectionName].namespace = namespace;
+            value.sections![sectionName].namespace = namespace;
         });
         transformed[newKey as keyof Data] = value.sections as any;
       } else {
@@ -592,7 +592,7 @@ async function createMergedData(
 ): Promise<void> {
   const dataPath = 'public/data';
   const themeData = await getThemeData();
-  const mergedData: Data = mergeData(themeData, pluginsData);
+  const mergedData: Data = mergeData(themeData, pluginsData );
   let updatedPages = themeData.pages;
   if (Object.keys(pluginsData).length > 0) {
     // Handle the merging of pages separately

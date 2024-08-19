@@ -9,7 +9,7 @@ import importElementData from './import-element-data';
 import * as path from 'path';
 import { promises as fs } from 'fs';
 
-const dataPath = path.join(process.cwd(), 'src/setup/data.json');
+const dataPath = path.join(process.cwd(), 'setup/data.json');
 
 const getEnvVariable = (key: string): string => {
   const value = process.env[key];

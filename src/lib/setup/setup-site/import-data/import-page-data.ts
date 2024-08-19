@@ -33,23 +33,6 @@ interface Files {
   [key: string]: FileData;
 }
 
-// Function to import file data
-// async function importFileData(filePath: string): Promise<FileData | null> {
-//   try {
-//     const stats = await fs.stat(filePath);
-//     const ext = path.extname(filePath).slice(1);
-//     return {
-//       path: filePath,
-//       name: path.basename(filePath),
-//       size: stats.size,
-//       type: `image/${ext === 'svg' ? 'svg+xml' : ext}`,
-//     };
-//   } catch (error) {
-//     console.error(`Failed to import file data for ${filePath}:`, error);
-//     return null;
-//   }
-// }
-
 // Main function to import page data
 export default async function importPageData(client: any, data: Data | null): Promise<void> {
   if (!data?.pages) {

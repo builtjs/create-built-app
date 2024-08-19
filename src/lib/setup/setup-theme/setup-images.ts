@@ -59,20 +59,16 @@ function findImageFieldsInSections(sections: { [key: string]: Section }): { [key
 function getImageDataFromBuilt(
   builtData: BuiltData,
   globalImageFields: string[],
-  sectionImageFields: { [key: string]: string[] },
-  repoName: string
+  sectionImageFields: { [key: string]: string[] }
 ) {
-  const images: { url: string; path: string; repoName: string; ext: string }[] = [];
+  const images: { path: string;}[] = [];
 
   // Get global images
   globalImageFields.forEach((field) => {
     const image = builtData.global[field];
     if (image && image.url) {
       images.push({
-        url: image.url,
-        path: path.join('public', image.url),
-        repoName: repoName.replace('_', '/'),
-        ext: image.ext,
+        path: path.join('public', image.url)
       });
     }
   });
@@ -85,10 +81,7 @@ function getImageDataFromBuilt(
         const image = section.data[field];
         if (image && image.url) {
           images.push({
-            url: image.url,
-            path: path.join('public', image.path, `${image.name}.${image.ext}`),
-            repoName: repoName,
-            ext: image.ext,
+            path: path.join('public', image.path, `${image.name}.${image.ext}`)
           });
         }
       });
@@ -125,14 +118,31 @@ async function downloadImage(url: string, fullPath: string): Promise<void> {
 }
 
 // Function to download and save images
-async function downloadAndSaveImages(images: { url: string; path: string; repoName: string; ext: string }[]) {
+async function downloadAndSaveImages(images: {path: string; }[], repoConfig:any) {
+  const provider = repoConfig.provider;
   for (const image of images) {
-    const imagePath = path.dirname(image.path);
+    const directoryPath = image.path.substring(0, image.path.lastIndexOf('/'));
+    // const fileName = image.path.substring(
+    //   image.path.lastIndexOf('/') + 1,
+    //   image.path.lastIndexOf('.')
+    // );
+    // const fileExtension = image.path.substring(image.path.lastIndexOf('.') + 1);
+    const imagePath = path.dirname(directoryPath);
     if (!(await fsPromises.stat(imagePath).catch(() => false))) {
       await fsPromises.mkdir(imagePath, { recursive: true });
     }
-
-    const imageUrl = `https://raw.githubusercontent.com/${image.repoName.replace('_','/')}/main/public${image.url}`;
+    let imageUrl = '';
+    let repoName = `${repoConfig.owner}/${repoConfig.repo}`;
+    if(provider === 'gh'){
+      imageUrl = `https://raw.githubusercontent.com/${repoName}/main/public${image.path}`;
+    }else if(provider === 'gl'){
+      imageUrl = `https://gitlab.com/${repoName}/-/raw/main/public${image.path}`
+    }else if(provider === 'bb'){
+      imageUrl = `https://bitbucket.org/${repoName}/raw/main/public${image.path}`;
+    }else{
+      console.log('Namespace does not start with a recognised prefix.');
+    }
+    
     await downloadImage(imageUrl, image.path);
   }
 }
@@ -141,10 +151,16 @@ export async function setupImages(plugins: string[]) {
   // Get the path to the project root
   const projectRoot = process.cwd();
 
-  for (const plugin of plugins) {
+  for (const pluginNamespace of plugins) {
+    const [provider, owner, repo] = pluginNamespace.split('_');
+    let repoConfig = {
+      owner: owner,
+      repo: repo,
+      provider: provider
+    };
     // Define paths to the schema and data files
-    const globalSchemaPath = path.join(projectRoot, `public/data/plugins/${plugin}/schemas/global.json`);
-    const sectionsSchemaPath = path.join(projectRoot, `public/data/plugins/${plugin}/schemas/sections.json`);
+    const globalSchemaPath = path.join(projectRoot, `public/data/plugins/${pluginNamespace}/schemas/global.json`);
+    const sectionsSchemaPath = path.join(projectRoot, `public/data/plugins/${pluginNamespace}/schemas/sections.json`);
     const builtDataPath = path.join(projectRoot, `public/data/_built/data.json`);
 
     // Read schemas and built data
@@ -157,12 +173,12 @@ export async function setupImages(plugins: string[]) {
     const sectionImageFields = findImageFieldsInSections(sectionsSchema.sections);
 
     // Get image data
-    const images = getImageDataFromBuilt(builtData, globalImageFields, sectionImageFields, plugin);
+    const images = getImageDataFromBuilt(builtData, globalImageFields, sectionImageFields);
 
     // Download and save images
-    await downloadAndSaveImages(images);
+    await downloadAndSaveImages(images, repoConfig);
 
-    console.log(`Images for plugin ${plugin} downloaded and saved.`);
+    console.log(`Images for plugin ${pluginNamespace} downloaded and saved.`);
   }
 }
 

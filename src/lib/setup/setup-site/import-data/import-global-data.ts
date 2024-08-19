@@ -18,8 +18,8 @@ interface FileData {
 }
 
 interface GlobalData {
-  files: Record<string, File | File[]>; // Ensure this type matches the expected input for getFilesData
-  data: any; // Adjust the type based on the actual structure of 'global.data'
+  files: Record<string, File | File[]>;
+  data: any;
 }
 
 export default async function importGlobalData(client: any, global: GlobalData | null): Promise<void> {
