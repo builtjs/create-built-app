@@ -84,8 +84,7 @@ export async function updateTheme(theme?: Theme | null) {
 
   const isValid = await validateApiKey(apiKey);
   if (!isValid) {
-    console.error('Invalid API key.');
-    process.exit(1);
+    apiKey = await promptForApiKey();
   }
   await saveApiKeyToConfig(apiKey);
   //   const theme = await isTheme();

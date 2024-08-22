@@ -258,8 +258,7 @@ export async function sendRequest(type: string, data: Buffer): Promise<void> {
 
     const isValid = await validateApiKey(apiKey);
     if (!isValid) {
-      console.error('Invalid API key.');
-      process.exit(1);
+      apiKey = await promptForApiKey();
     }
     await saveApiKeyToConfig(apiKey);
 
