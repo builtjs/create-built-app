@@ -7,7 +7,8 @@ import {
   saveApiKeyToConfig,
 } from '../../../lib/apiKeyUtils';
 import {Constants} from '../../../constants';
-import {promises as fs} from 'fs';
+import {promises as fsp} from 'fs';
+import fs from 'fs';
 import * as path from 'path';
 import {getSrcDir} from '../../../utils';
 import * as zlib from 'zlib';
@@ -123,7 +124,7 @@ export async function updateTheme(theme?: Theme | null) {
   const outputPath = path.join('public/data/_built', 'data.json');
 
   try {
-    themeLayoutFileContent = await fs.readFile(
+    themeLayoutFileContent = await fsp.readFile(
       `${componentsPath}/layout.${ext}`,
       'utf8'
     );
@@ -143,15 +144,11 @@ export async function updateTheme(theme?: Theme | null) {
     process.exit(1);
   }
   try {
-    themeModulePagesFileContent = await fs.readFile(
+    themeModulePagesFileContent = await fsp.readFile(
       themeModulePagesFilePath,
       'utf8'
     );
     if (themeModulePagesFileContent) {
-      // console.error(
-      //   `Error: No theme layout file content: ${componentsPath}/layout.${ext}`
-      // );
-      // process.exit(1);
 
       combinedSectionPositionData = transformSectionPositionData(
         JSON.parse(themeModulePagesFileContent)
@@ -170,6 +167,11 @@ export async function updateTheme(theme?: Theme | null) {
     );
     process.exit(1);
   }
+  fs.rmSync('public/data/plugins', { recursive: true, force: true });
+  fs.rmSync(path.join(srcDir, 'components/plugins'), { recursive: true, force: true });
+  fs.rmSync(path.join(srcDir, 'lib/plugins'), { recursive: true, force: true });
+  fs.rmSync(path.join(srcDir, 'pages/api/plugins'), { recursive: true, force: true });
+  fs.rmSync(path.join(srcDir, 'styles/plugins'), { recursive: true, force: true });
   setupPlugins(theme, apiKey)
     .then(async results => {
       let updatedCombinedPluginData = {};
@@ -228,8 +230,8 @@ export async function updateTheme(theme?: Theme | null) {
           });
           const dir = path.dirname(builtLayoutFilePath);
 
-          await fs.mkdir(dir, {recursive: true});
-          await fs.writeFile(builtLayoutFilePath, formattedCode, null);
+          await fsp.mkdir(dir, {recursive: true});
+          await fsp.writeFile(builtLayoutFilePath, formattedCode, null);
         } catch (error) {
           console.error('Error: Unable to build layout file.', error);
         }
@@ -333,10 +335,6 @@ async function setupPlugins(
     const successfulSetups = results.filter(result => !result.error);
     const failedSetups = results.filter(result => result.error);
 
-    if (successfulSetups.length > 0) {
-      console.log('Plugins setup successfully:', successfulSetups);
-    }
-
     return {successfulSetups, failedSetups};
   } else {
     console.log('This is not a theme (there is no theme.json file).');
@@ -379,13 +377,12 @@ async function transformPluginData(
         if (decompressedData) {
           let data = JSON.parse(decompressedData.toString('utf-8'));
 
-          let transformedData: Data = await writePluginFiles(
+          let transformedData: Data | null = await writePluginFiles(
             setup.namespace,
             data,
             outputPath,
             srcDir
           );
-
 
           combinedData = _.mergeWith(
             {},
@@ -445,63 +442,68 @@ async function writePluginFiles(
   data: any,
   outputPath: string,
   srcDir: string
-): Promise<Data> {
+): Promise<Data | null> {
+  let transformedData: Data;
   const writeTasks: Promise<void>[] = [];
+  try {
+    for (const [filePath, content] of Object.entries(data.components || {})) {
+      const targetPath = path.join(srcDir, 'components', filePath);
 
-  for (const [filePath, content] of Object.entries(data.components || {})) {
-    const targetPath = path.join(srcDir, 'components', filePath);
+      writeTasks.push(
+        fsp
+          .mkdir(path.dirname(targetPath), {recursive: true})
+          .then(() => fsp.writeFile(targetPath, content as string))
+      );
+    }
 
-    writeTasks.push(
-      fs
-        .mkdir(path.dirname(targetPath), {recursive: true})
-        .then(() => fs.writeFile(targetPath, content as string))
-    );
+    for (const [filePath, content] of Object.entries(data.api || {})) {
+      const targetPath = path.join(srcDir, 'pages/api', filePath);
+      writeTasks.push(
+        fsp
+          .mkdir(path.dirname(targetPath), {recursive: true})
+          .then(() => fsp.writeFile(targetPath, content as string))
+      );
+    }
+
+    for (const [filePath, content] of Object.entries(data.styles || {})) {
+      const targetPath = path.join(srcDir, 'styles', filePath);
+      writeTasks.push(
+        fsp
+          .mkdir(path.dirname(targetPath), {recursive: true})
+          .then(() => fsp.writeFile(targetPath, content as string))
+      );
+    }
+
+    for (const [filePath, content] of Object.entries(data.lib || {})) {
+      const targetPath = path.join(srcDir, 'lib', filePath);
+      writeTasks.push(
+        fsp
+          .mkdir(path.dirname(targetPath), {recursive: true})
+          .then(() => fsp.writeFile(targetPath, content as string))
+      );
+    }
+
+    for (const [filePath, content] of Object.entries(data.data || {})) {
+      const targetPath = path.join(
+        'public/data',
+        `plugins/${namespace}`,
+        filePath
+      );
+      writeTasks.push(
+        fsp
+          .mkdir(path.dirname(targetPath), {recursive: true})
+          .then(() => fsp.writeFile(targetPath, JSON.stringify(content)))
+      );
+    }
+
+    await Promise.all(writeTasks);
+
+    transformedData = transformData(data.data, namespace);
+    return transformedData;
+  } catch (error) {
+    console.error(`Error while updating plugins.`, error);
+    return null;
   }
-
-  for (const [filePath, content] of Object.entries(data.api || {})) {
-    const targetPath = path.join(srcDir, 'pages/api', filePath);
-    writeTasks.push(
-      fs
-        .mkdir(path.dirname(targetPath), {recursive: true})
-        .then(() => fs.writeFile(targetPath, content as string))
-    );
-  }
-
-  for (const [filePath, content] of Object.entries(data.styles || {})) {
-    const targetPath = path.join(srcDir, 'styles', filePath);
-    writeTasks.push(
-      fs
-        .mkdir(path.dirname(targetPath), {recursive: true})
-        .then(() => fs.writeFile(targetPath, content as string))
-    );
-  }
-
-  for (const [filePath, content] of Object.entries(data.lib || {})) {
-    const targetPath = path.join(srcDir, 'lib', filePath);
-    writeTasks.push(
-      fs
-        .mkdir(path.dirname(targetPath), {recursive: true})
-        .then(() => fs.writeFile(targetPath, content as string))
-    );
-  }
-
-  for (const [filePath, content] of Object.entries(data.data || {})) {
-    const targetPath = path.join(
-      'public/data',
-      `plugins/${namespace}`,
-      filePath
-    );
-    writeTasks.push(
-      fs
-        .mkdir(path.dirname(targetPath), {recursive: true})
-        .then(() => fs.writeFile(targetPath, JSON.stringify(content)))
-    );
-  }
-
-  await Promise.all(writeTasks);
-
-  const transformedData: Data = transformData(data.data, namespace);
-  return transformedData;
 }
 
 function transformData(data: InputData, namespace: string): Data {
@@ -530,7 +532,7 @@ function transformData(data: InputData, namespace: string): Data {
     ) {
       if (newKey === 'sections' && value.sections) {
         Object.keys(value.sections).forEach(sectionName => {
-            value.sections![sectionName].namespace = namespace;
+          value.sections![sectionName].namespace = namespace;
         });
         transformed[newKey as keyof Data] = value.sections as any;
       } else {
@@ -591,7 +593,7 @@ async function createMergedData(
 ): Promise<void> {
   const dataPath = 'public/data';
   const themeData = await getThemeData();
-  const mergedData: Data = mergeData(themeData, pluginsData );
+  const mergedData: Data = mergeData(themeData, pluginsData);
   let updatedPages = themeData.pages;
   if (Object.keys(pluginsData).length > 0) {
     // Handle the merging of pages separately
@@ -620,7 +622,7 @@ async function createMergedData(
 
   // Read collection data and merge
   const collectionsDir = path.join(dataPath, 'collections');
-  const collectionFiles = await fs.readdir(collectionsDir);
+  const collectionFiles = await fsp.readdir(collectionsDir);
 
   for (const file of collectionFiles) {
     const collectionData = await readJsonFile(path.join(collectionsDir, file));
@@ -637,9 +639,9 @@ async function createMergedData(
   const dir = path.dirname(outputPath);
 
   // Ensure the directory exists
-  await fs.mkdir(dir, {recursive: true});
+  await fsp.mkdir(dir, {recursive: true});
   // Write the merged data back to _data.json
-  await fs.writeFile(outputPath, JSON.stringify(mergedData, null, 2), 'utf8');
+  await fsp.writeFile(outputPath, JSON.stringify(mergedData, null, 2), 'utf8');
 }
 
 const orderSections = (sections: Sections): Sections => {
@@ -688,7 +690,7 @@ async function getThemeData(): Promise<Data> {
 
 async function readJsonFile(filePath: string): Promise<any> {
   try {
-    const data = await fs.readFile(path.join(process.cwd(), filePath), 'utf8');
+    const data = await fsp.readFile(path.join(process.cwd(), filePath), 'utf8');
     return JSON.parse(data);
   } catch (error: any) {
     if (error.code === 'ENOENT') {

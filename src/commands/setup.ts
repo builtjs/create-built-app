@@ -68,36 +68,10 @@ export async function update() {
     );
     process.exit(1);
   }
-  // let {type} = options;
   const theme = await getTheme();
-  // if (type) {
-  //   if (type === Constants.TYPES.site) {
-  //     await setupSiteData();
-  //   } else if (type === Constants.TYPES.theme) {
-  //     await setupThemeData(theme);
-  //   }
-  // } else {
-    // if (!theme) {
-    //   await setupSiteData();
-    // } else {
-      await updateTheme(theme);
-    // }
-  // }
-  // if ((type && type === Constants.TYPES.site) || !theme) {
-  //   await setupSiteData();
-  // } else if ((type && type === Constants.TYPES.theme) || theme) {
-  //   const theme = await getTheme();
-  //   if (theme) {
-  //     await setupThemeData(theme);
-  //   } else {
-  //     console.error(
-  //       'Error: This is not a theme (there is no theme.json file).'
-  //     );
-  //     process.exit(1);
-  //   }
-  // }
+  await updateTheme(theme);
+  console.log('Done!');
 }
-
 
 export async function setup() {
   const isPlugin = await fileExists(
@@ -119,10 +93,10 @@ export async function setup() {
   // let {type} = options;
   // if (type) {
   //   if (type === Constants.TYPES.site) {
-      await setupSiteData();
-    // } else if (type === Constants.TYPES.theme) {
-    //   await updateTheme(theme);
-    // }
+  await setupSiteData();
+  // } else if (type === Constants.TYPES.theme) {
+  //   await updateTheme(theme);
+  // }
   // } else {
   //   if (!theme) {
   //     await setupSiteData();
