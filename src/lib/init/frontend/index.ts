@@ -8,7 +8,7 @@ export async function installFrontendSite(
   cms: string
 ) {
   return new Promise<void>(async (resolve, reject) => {
-    console.log('Installing site..');
+    console.log('Installing site...');
 
     const srcPath = `${frontendPath}${rootDir}`;
     let frontendConfigPath = Constants.SITE_FRONTEND_DIR;
@@ -179,17 +179,6 @@ export async function installFrontendSite(
     } catch (error) {
       console.error('Error processing the Tailwind config file:', error);
     }
-    // try {
-    //   tailwindConfigData = fs.readFileSync(tailwindConfigPath);
-    //   tailwindConfigData = tailwindConfigData.replaceAll('src/', '');
-    //   fs.writeFile(
-    //     tailwindConfigPath,
-    //     tailwindConfigData,
-    //     function(err) {
-    //       if (err) return console.log(err);
-    //     }
-    //   );
-    // } catch (error) {}
 
     try {
       fs.rmSync(`${frontendPath}/postcss.config.mjs`);

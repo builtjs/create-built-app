@@ -64,7 +64,7 @@ export type Data = {
   collections: Collection;
 };
 
-function mergeArrays<T extends { name: string; namespace?: string }>(
+function mergeArraysDistinct<T extends { name: string; namespace?: string }>(
   arr1: T[],
   arr2: T[]
 ): T[] {
@@ -77,11 +77,16 @@ function mergeArrays<T extends { name: string; namespace?: string }>(
       // Exclude the "namespace" field when merging
       const { namespace, ...rest } = item2;
       merged[index] = { ...merged[index], ...rest };
-      // merged[index] = {...merged[index], ...item2};
     }
   });
   return merged;
 }
+
+function mergeArrays<T>(arr1: T[], arr2: T[]): T[] {
+  // Concatenate both arrays and return the result
+  return [...arr1, ...arr2];
+}
+
 
 function isNamedArray<T>(value: any): value is T[] {
   return (
@@ -101,7 +106,7 @@ function mergeObjects<T extends Record<string, any>>(obj1: T, obj2: T): T {
       ) {
         merged[key] = mergeObjects(obj1[key], obj2[key]);
       } else if (Array.isArray(obj1[key]) && isNamedArray(obj2[key])) {
-        merged[key] = mergeArrays(obj1[key], obj2[key] as any);
+        merged[key] = mergeArraysDistinct(obj1[key], obj2[key] as any);
       } else {
         merged[key] = obj2[key];
       }
@@ -116,9 +121,9 @@ export function mergeData(data1: Data, data2: Data): Data {
     return data1;
   }
   return {
-    contentTypes: mergeArrays(data1.contentTypes, data2.contentTypes),
-    pages: mergeArrays(data1.pages, data2.pages),
-    sections: mergeArrays(data1.sections, data2.sections),
+    contentTypes: mergeArraysDistinct(data1.contentTypes, data2.contentTypes),
+    pages: mergeArraysDistinct(data1.pages, data2.pages),
+    sections: mergeArraysDistinct(data1.sections, data2.sections),
     templates: mergeArrays(data1.templates, data2.templates),
     layout: mergeObjects<Layout>(data1.layout, data2.layout),
     global: mergeObjects<Global>(data1.global, data2.global),

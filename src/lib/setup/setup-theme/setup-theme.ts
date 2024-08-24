@@ -524,7 +524,6 @@ function transformData(data: InputData, namespace: string): Data {
     const newKey = toCamelCase(
       key.split('/').pop()?.replace('.json', '') || ''
     );
-
     if (key.startsWith('collections') && value.data) {
       transformed.collections[newKey] = value.data;
     } else if (
@@ -535,14 +534,18 @@ function transformData(data: InputData, namespace: string): Data {
           value.sections![sectionName].namespace = namespace;
         });
         transformed[newKey as keyof Data] = value.sections as any;
-      } else {
+      }else if (newKey === 'templates' && value.templates) {
+        Object.keys(value.templates).forEach(templateName => {
+          value.templates![templateName].namespace = namespace;
+        });
+        transformed[newKey as keyof Data] = value.templates as any;
+       } else {
         transformed[newKey as keyof Data] = value[
           newKey as keyof DataFile
         ] as any;
       }
     }
   }
-
   return transformed;
 }
 
