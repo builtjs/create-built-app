@@ -69,16 +69,26 @@ function mergeArraysDistinct<T extends { name: string; namespace?: string }>(
   arr2: T[]
 ): T[] {
   const merged = [...arr1];
+
   arr2.forEach(item2 => {
     const index = merged.findIndex(item1 => item1.name === item2.name);
+
     if (index === -1) {
+      // No item with the same name exists in arr1, so push item2 directly
       merged.push(item2);
     } else {
-      // Exclude the "namespace" field when merging
-      const { namespace, ...rest } = item2;
-      merged[index] = { ...merged[index], ...rest };
+      // Item with the same name exists, merge it
+      const item1 = merged[index];
+      // Check if namespaces are the same
+      const namespace =
+        item1.namespace === item2.namespace ? item1.namespace : undefined;
+
+      // Merge objects, excluding namespace if they differ
+      const { namespace: _, ...rest } = item2; // Exclude namespace from item2
+      merged[index] = { ...item1, ...rest, namespace };
     }
   });
+
   return merged;
 }
 

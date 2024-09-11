@@ -7,7 +7,7 @@ import {
   saveApiKeyToConfig,
 } from '../../../lib/apiKeyUtils';
 import {Constants} from '../../../constants';
-import {promises as fsp} from 'fs';
+import {promises as fsp, open as fsOpen} from 'fs';
 import fs from 'fs';
 import * as path from 'path';
 import {getSrcDir} from '../../../utils';
@@ -19,12 +19,15 @@ import {
   Page,
   Section,
 } from '../../../lib/setup/setup-theme/merge-data';
-import {setupImages} from '../../../lib/setup/setup-theme/setup-images';
+import {updatePluginImagesForTheme} from '../../../lib/setup/setup-theme/setup-images';
 import {setupSiteData} from '../../../lib/setup/setup-site/import-data/import-data';
+import {getCombinedData} from '../../../commands/publish';
+import {CombinedData} from '../../../interfaces';
 
-interface Theme {
+interface ThemeOrPlugin {
+  namespace: string;
   language?: string;
-  plugins: string[];
+  plugins?: string[];
 }
 
 interface ThemeData {
@@ -76,177 +79,654 @@ interface PageSectionData {
   };
 }
 
-export async function updateTheme(theme?: Theme | null) {
-  let apiKey = await getApiKey();
-  if (!apiKey) {
-    console.error('Unable to process API key.');
-    process.exit(1);
-  }
+interface UpdateOptions {
+  type?: string;
+  themeOrPlugin?: ThemeOrPlugin;
+}
 
-  const isValid = await validateApiKey(apiKey);
-  if (!isValid) {
-    apiKey = await promptForApiKey();
-  }
-  await saveApiKeyToConfig(apiKey);
-  //   const theme = await isTheme();
-  if (!theme) {
-    console.error(
-      `Error: Project needs to include a public/data/theme.json file.`
+// export async function validateForUpdate({
+//   type = '',
+//   themeOrPlugin,
+// }: UpdateOptions): Promise<void> {
+//   return new Promise<void>(async resolve => {
+//     console.log('updateThemeOrPlugin...')
+//     if (!themeOrPlugin) {
+//       console.error('Error: No theme or plugin.');
+//       process.exit(1);
+//     }
+//     let apiKey = await getApiKey();
+//     if (!apiKey) {
+//       console.error('Unable to process API key.');
+//       process.exit(1);
+//     }
+
+//     const isValid = await validateApiKey(apiKey);
+//     if (!isValid) {
+//       apiKey = await promptForApiKey();
+//     }
+//     await saveApiKeyToConfig(apiKey);
+//     console.log(`Updating ${type}...`);
+//     await update(themeOrPlugin, type, apiKey);
+//     resolve();
+//   });
+// }
+
+export async function update(
+  themeOrPlugin: ThemeOrPlugin,
+  type: string,
+  apiKey: string,
+  frontendPath: string,
+  isConfig?: boolean
+) {
+  return new Promise<void>(async resolve => {
+    // console.log('update()...', type);
+    // console.log({frontendPath})
+    // // console.log('themeOrPlugin...', themeOrPlugin);
+    // if (!themeOrPlugin) {
+    //   console.error('Error: No theme or plugin.');
+    //   process.exit(1);
+    // }
+    let namespacePath = '';
+    if (type === 'plugin' && themeOrPlugin.namespace) {
+      namespacePath = `plugins/${themeOrPlugin.namespace}`;
+    }
+    // // let configPath = isConfig ? 'config' : '';
+    // const cwd = process.cwd();
+    // let language = themeOrPlugin.language
+    //   ? themeOrPlugin.language
+    //   : Constants.defaults.LANGUAGE;
+    // const acceptedLanguages = ['javascript', 'typescript'];
+    // language =
+    //   language && acceptedLanguages.includes(language)
+    //     ? language
+    //     : Constants.defaults.LANGUAGE;
+    // const ext = `${
+    //   language === 'javascript'
+    //     ? 'jsx'
+    //     : language === 'typescript'
+    //       ? 'tsx'
+    //       : Constants.defaults.EXT
+    // }`;
+    // const themeModulePagesFilePath = path.join(
+    //   frontendPath,
+    //   `/public/data/module-pages.json`
+    // );
+    // // Path to the output file
+    const outputPath = path.join(
+      frontendPath,
+      'public/data/_built',
+      'data.json'
     );
-    process.exit(1);
-  }
-  const srcDir = getSrcDir();
-  let importsCode = '';
-  let themeLayoutFileContent = '';
-  let themeModulePagesFileContent: any = null;
-  let combinedSectionPositionData: PageSectionData = {};
-  let transformedThemeLayoutFileContent = '';
-  const componentsPath = `${srcDir}/components`;
-  let language = theme.language ? theme.language : Constants.defaults.LANGUAGE;
-  const acceptedLanguages = ['javascript', 'typescript'];
-  language =
-    language && acceptedLanguages.includes(language)
-      ? language
+    // let importsCode = '';
+
+    // let themeModulePagesFileContent: any = null;
+    let combinedSectionPositionData: PageSectionData = {};
+    // try {
+    //   themeModulePagesFileContent = await fsp.readFile(
+    //     themeModulePagesFilePath,
+    //     'utf8'
+    //   );
+    //   if (themeModulePagesFileContent) {
+    //     combinedSectionPositionData = transformSectionPositionData(
+    //       JSON.parse(themeModulePagesFileContent)
+    //     );
+    //   }
+    // } catch (error) {
+    //   console.error(
+    //     `Error: Unable to read theme file: ${themeModulePagesFilePath}`,
+    //     error
+    //   );
+    //   process.exit(1);
+    // }
+    // const componentsPath = `${frontendPath}/components/${namespacePath}`;
+    // console.log({componentsPath});
+    // const builtLayoutFilePath = `${componentsPath}/_built/layout.${ext}`;
+    // let themeLayoutFileContent = '';
+    // let transformedThemeLayoutFileContent = '';
+    // try {
+    //   themeLayoutFileContent = await fsp.readFile(
+    //     `${componentsPath}/layout.${ext}`,
+    //     'utf8'
+    //   );
+    //   if (!themeLayoutFileContent) {
+    //     console.error(
+    //       `Error: No theme layout file content: ${componentsPath}/layout.${ext}`
+    //     );
+    //     process.exit(1);
+    //   }
+    //   transformedThemeLayoutFileContent =
+    //     getLayoutCode(themeLayoutFileContent) || '';
+    // } catch (error) {
+    //   console.error(
+    //     `Error: Unable to read theme layout file: ${componentsPath}/layout.${ext}`,
+    //     error
+    //   );
+    //   process.exit(1);
+    // }
+    // if (!transformedThemeLayoutFileContent) {
+    //   console.error(
+    //     `Error: Theme layout file does not contain slots: ${componentsPath}/layout.${ext}`
+    //   );
+    //   process.exit(1);
+    // }
+
+    let updatedCombinedPluginData = {};
+    if (themeOrPlugin && themeOrPlugin.plugins && themeOrPlugin.plugins.length) {
+      console.log('themeOrPlugin && themeOrPlugin.plugins', themeOrPlugin.plugins)
+      updatedCombinedPluginData = await getCombinedPluginData(
+        themeOrPlugin,
+        apiKey,
+        frontendPath,
+        updatedCombinedPluginData,
+        outputPath,
+        namespacePath,
+        combinedSectionPositionData,
+        type,
+        isConfig
+      );
+      // setupPlugins(themeOrPlugin, apiKey)
+      //   .then(async results => {
+      //     console.log({results});
+      //     fs.rmSync(path.join(frontendPath, 'public/data/plugins'), {
+      //       recursive: true,
+      //       force: true,
+      //     });
+      //     fs.rmSync(path.join(frontendPath, `components/plugins`), {
+      //       recursive: true,
+      //       force: true,
+      //     });
+      //     fs.rmSync(path.join(frontendPath, 'lib/plugins'), {
+      //       recursive: true,
+      //       force: true,
+      //     });
+      //     fs.rmSync(path.join(frontendPath, 'pages/api/plugins'), {
+      //       recursive: true,
+      //       force: true,
+      //     });
+      //     fs.rmSync(path.join(frontendPath, 'styles/plugins'), {
+      //       recursive: true,
+      //       force: true,
+      //     });
+      //     if (
+      //       results &&
+      //       results.successfulSetups &&
+      //       results.successfulSetups.length
+      //     ) {
+      //       console.log('Updating plugins...');
+
+      //       let {
+      //         updatedThemeLayoutFileContent,
+      //         updatedImportsCode,
+      //         sectionPositionData,
+      //         combinedPluginData,
+      //       } = await transformPluginData(
+      //         results,
+      //         outputPath,
+      //         frontendPath,
+      //         ext,
+      //         transformedThemeLayoutFileContent,
+      //         importsCode
+      //       );
+      //       updatedCombinedPluginData = combinedPluginData;
+      //       combinedSectionPositionData = _.merge(
+      //         {},
+      //         combinedSectionPositionData,
+      //         sectionPositionData
+      //       );
+      //       combinedSectionPositionData = orderSections(
+      //         combinedSectionPositionData
+      //       );
+      //       try {
+      //         let templateLayoutCode = getLayoutSectionSlotCode();
+      //         updatedThemeLayoutFileContent =
+      //           updatedThemeLayoutFileContent.replace(
+      //             '{/* children */}',
+      //             templateLayoutCode
+      //           );
+
+      //         // Define the regular expression to find the content between // content-slot and // end-content-slot
+      //         const contentSlotRegex =
+      //           /(\/\/ content-slot[\s\S]*?\/\/ end-content-slot)/;
+
+      //         let updatedContent = themeLayoutFileContent.replace(
+      //           contentSlotRegex,
+      //           `// content-slot${updatedThemeLayoutFileContent}// end-content-slot`
+      //         );
+
+      //         if (updatedImportsCode) {
+      //           updatedContent = updatedContent.replace(
+      //             '// end-import-slot',
+      //             `${updatedImportsCode}\n// end-import-slot`
+      //           );
+      //         }
+
+      //         const formattedCode = await prettier.format(updatedContent, {
+      //           parser: language,
+      //         });
+      //         const dir = path.dirname(builtLayoutFilePath);
+
+      //         await fsp.mkdir(dir, {recursive: true});
+      //         await fsp.writeFile(builtLayoutFilePath, formattedCode, null);
+
+      //         await createMergedData(
+      //           outputPath,
+      //           updatedCombinedPluginData,
+      //           combinedSectionPositionData,
+      //           isConfig,
+      //           frontendPath
+      //         );
+      //         if (
+      //           !isConfig && themeOrPlugin.plugins &&
+      //           Array.isArray(themeOrPlugin.plugins)
+      //         ) {
+      //           await updatePluginImagesForTheme(themeOrPlugin, frontendPath, type, isConfig);
+      //         }
+
+      //         await updateCss(themeOrPlugin, type, namespacePath, frontendPath);
+      //         // // update index.css
+      //         // // if(theme.plugins && theme.plugins.length){
+      //         // let indexCssPath = frontendPath
+      //         //   ? `${frontendPath}/styles${namespacePath}/index.css`
+      //         //   : path.join(process.cwd(), `styles${namespacePath}/index.css`);
+
+      //         // // const indexCssPath = `${frontendPath}/styles/index.css`;
+      //         // let cssData: any = await fs.promises.readFile(
+      //         //   indexCssPath,
+      //         //   'utf8'
+      //         // );
+      //         // console.log({indexCssPath});
+      //         // console.log({cssData});
+      //         // if (cssData) {
+      //         //   let cssString = ``;
+      //         //   console.log({});
+      //         //   if (type === 'theme' && themeOrPlugin.plugins) {
+      //         //     for (let i = 0; i < themeOrPlugin.plugins.length; i++) {
+      //         //       const plugin = themeOrPlugin.plugins[i];
+      //         //       if (
+      //         //         !cssData.includes(`@import 'plugins/${plugin}/index.css`)
+      //         //       ) {
+      //         //         cssString += `@import 'plugins/${plugin}/index.css';\n`;
+      //         //       }
+      //         //     }
+      //         //   }
+      //         //   cssString += `@import 'globals.css';`;
+      //         //   console.log({cssString});
+      //         //   cssData = cssData.replace(`@import 'globals.css';`, cssString);
+      //         //   console.log('updated css data', cssData);
+      //         //   await fs.promises.writeFile(indexCssPath, cssData);
+      //         // }
+
+      //       } catch (error) {
+      //         console.error('Error: Unable to build layout file.', error);
+      //         process.exit(1);
+      //       }
+      //     }
+      //     // else {
+      //       const {combinedData, type} = await getCombinedData(false);
+      //       let transformedData = await transformData(combinedData.data);
+      //       console.log({updatedCombinedPluginData})
+      //       await createMergedData(
+      //         outputPath,
+      //         transformedData,
+      //         combinedSectionPositionData,
+      //         isConfig,
+      //         frontendPath
+      //       );
+      //       // return resolve();
+      //     // }
+      //   })
+      //   .catch(error => {
+      //     console.error('An error occurred during setup:', error);
+      //     process.exit(1);
+      //   });
+    } else {
+      const {combinedData} = await getCombinedData(false);
+      let transformedData = await transformData(combinedData.data);
+      const themeModulePagesFilePath = path.join(
+        frontendPath,
+        `/public/data/module-pages.json`
+      );
+      try {
+        const themeModulePagesFileContent = await fsp.readFile(
+          themeModulePagesFilePath,
+          'utf8'
+        );
+        if (themeModulePagesFileContent) {
+          combinedSectionPositionData = transformSectionPositionData(
+            JSON.parse(themeModulePagesFileContent)
+          );
+        }
+      } catch (error) {
+        console.error(
+          `Error: Unable to read theme file: ${themeModulePagesFilePath}`,
+          error
+        );
+        process.exit(1);
+      }
+      console.log({updatedCombinedPluginData});
+      await createMergedData(
+        outputPath,
+        transformedData,
+        combinedSectionPositionData,
+        isConfig,
+        frontendPath
+      );
+      await updateCss(themeOrPlugin, type, namespacePath, frontendPath);
+      // if(!isConfig){
+      await updatePluginImagesForTheme(
+        themeOrPlugin,
+        frontendPath,
+        type,
+        isConfig
+      );
+    }
+
+    // }
+    return resolve();
+  });
+}
+
+function getCombinedPluginData(
+  themeOrPlugin: ThemeOrPlugin,
+  apiKey: string,
+  frontendPath: string,
+  updatedCombinedPluginData: any,
+  outputPath: string,
+  namespacePath: string,
+  combinedSectionPositionData: PageSectionData,
+  type: string,
+  isConfig?: boolean
+): Promise<any> {
+  return new Promise(async resolve => {
+    console.log('update()...', type);
+    console.log({frontendPath});
+    // console.log('themeOrPlugin...', themeOrPlugin);
+    if (!themeOrPlugin) {
+      console.error('Error: No theme or plugin.');
+      process.exit(1);
+    }
+    // let namespacePath = '';
+    // if (type === 'plugin' && themeOrPlugin.namespace) {
+    //   namespacePath = `plugins/${themeOrPlugin.namespace}`;
+    // }
+    // let configPath = isConfig ? 'config' : '';
+    const cwd = process.cwd();
+    let language = themeOrPlugin.language
+      ? themeOrPlugin.language
       : Constants.defaults.LANGUAGE;
-  const ext = `${
-    language === 'javascript'
-      ? 'jsx'
-      : language === 'typescript'
-        ? 'tsx'
-        : Constants.defaults.EXT
-  }`;
-  const builtLayoutFilePath = `${componentsPath}/_built/layout.${ext}`;
-  const themeModulePagesFilePath = path.join(
-    process.cwd(),
-    `public/data/module-pages.json`
-  );
-  // Path to the output file
-  const outputPath = path.join('public/data/_built', 'data.json');
-
-  try {
-    themeLayoutFileContent = await fsp.readFile(
-      `${componentsPath}/layout.${ext}`,
-      'utf8'
+    const acceptedLanguages = ['javascript', 'typescript'];
+    language =
+      language && acceptedLanguages.includes(language)
+        ? language
+        : Constants.defaults.LANGUAGE;
+    const ext = `${
+      language === 'javascript'
+        ? 'jsx'
+        : language === 'typescript'
+          ? 'tsx'
+          : Constants.defaults.EXT
+    }`;
+    const themeModulePagesFilePath = path.join(
+      frontendPath,
+      `/public/data/module-pages.json`
     );
-    if (!themeLayoutFileContent) {
+    // Path to the output file
+    // const outputPath = path.join(frontendPath, 'public/data/_built', 'data.json');
+    let importsCode = '';
+
+    let themeModulePagesFileContent: any = null;
+    // let combinedSectionPositionData: PageSectionData = {};
+    try {
+      themeModulePagesFileContent = await fsp.readFile(
+        themeModulePagesFilePath,
+        'utf8'
+      );
+      if (themeModulePagesFileContent) {
+        combinedSectionPositionData = transformSectionPositionData(
+          JSON.parse(themeModulePagesFileContent)
+        );
+      }
+    } catch (error) {
       console.error(
-        `Error: No theme layout file content: ${componentsPath}/layout.${ext}`
+        `Error: Unable to read theme file: ${themeModulePagesFilePath}`,
+        error
       );
       process.exit(1);
     }
-    transformedThemeLayoutFileContent =
-      getLayoutCode(themeLayoutFileContent) || '';
-  } catch (error) {
-    console.error(
-      `Error: Unable to read theme layout file: ${componentsPath}/layout.${ext}`,
-      error
-    );
-    process.exit(1);
-  }
-  try {
-    themeModulePagesFileContent = await fsp.readFile(
-      themeModulePagesFilePath,
-      'utf8'
-    );
-    if (themeModulePagesFileContent) {
-
-      combinedSectionPositionData = transformSectionPositionData(
-        JSON.parse(themeModulePagesFileContent)
+    const componentsPath = `${frontendPath}/components/${namespacePath}`;
+    console.log({componentsPath});
+    const builtLayoutFilePath = `${componentsPath}/_built/layout.${ext}`;
+    let themeLayoutFileContent = '';
+    let transformedThemeLayoutFileContent = '';
+    try {
+      themeLayoutFileContent = await fsp.readFile(
+        `${componentsPath}/layout.${ext}`,
+        'utf8'
       );
+      if (!themeLayoutFileContent) {
+        console.error(
+          `Error: No theme layout file content: ${componentsPath}/layout.${ext}`
+        );
+        process.exit(1);
+      }
+      transformedThemeLayoutFileContent =
+        getLayoutCode(themeLayoutFileContent) || '';
+    } catch (error) {
+      console.error(
+        `Error: Unable to read theme layout file: ${componentsPath}/layout.${ext}`,
+        error
+      );
+      process.exit(1);
     }
-  } catch (error) {
-    console.error(
-      `Error: Unable to read theme file: ${themeModulePagesFilePath}`,
-      error
-    );
-    process.exit(1);
-  }
-  if (!transformedThemeLayoutFileContent) {
-    console.error(
-      `Error: Theme layout file does not contain slots: ${componentsPath}/layout.${ext}`
-    );
-    process.exit(1);
-  }
-  fs.rmSync('public/data/plugins', { recursive: true, force: true });
-  fs.rmSync(path.join(srcDir, 'components/plugins'), { recursive: true, force: true });
-  fs.rmSync(path.join(srcDir, 'lib/plugins'), { recursive: true, force: true });
-  fs.rmSync(path.join(srcDir, 'pages/api/plugins'), { recursive: true, force: true });
-  fs.rmSync(path.join(srcDir, 'styles/plugins'), { recursive: true, force: true });
-  setupPlugins(theme, apiKey)
-    .then(async results => {
-      let updatedCombinedPluginData = {};
-      if (
-        results &&
-        results.successfulSetups &&
-        results.successfulSetups.length
-      ) {
-        let {
-          updatedThemeLayoutFileContent,
-          updatedImportsCode,
-          sectionPositionData,
-          combinedPluginData,
-        } = await transformPluginData(
-          results,
-          outputPath,
-          srcDir,
-          ext,
-          transformedThemeLayoutFileContent,
-          importsCode
-        );
-        updatedCombinedPluginData = combinedPluginData;
-        combinedSectionPositionData = _.merge(
-          {},
-          combinedSectionPositionData,
-          sectionPositionData
-        );
-        combinedSectionPositionData = orderSections(
-          combinedSectionPositionData
-        );
-        try {
-          let templateLayoutCode = getLayoutSectionSlotCode();
-          updatedThemeLayoutFileContent = updatedThemeLayoutFileContent.replace(
-            '{/* children */}',
-            templateLayoutCode
+    if (!transformedThemeLayoutFileContent) {
+      console.error(
+        `Error: Theme layout file does not contain slots: ${componentsPath}/layout.${ext}`
+      );
+      process.exit(1);
+    }
+    setupPlugins(themeOrPlugin, apiKey)
+      .then(async results => {
+        console.log({results});
+        fs.rmSync(path.join(frontendPath, 'public/data/plugins'), {
+          recursive: true,
+          force: true,
+        });
+        fs.rmSync(path.join(frontendPath, `components/plugins`), {
+          recursive: true,
+          force: true,
+        });
+        fs.rmSync(path.join(frontendPath, 'lib/plugins'), {
+          recursive: true,
+          force: true,
+        });
+        fs.rmSync(path.join(frontendPath, 'pages/api/plugins'), {
+          recursive: true,
+          force: true,
+        });
+        fs.rmSync(path.join(frontendPath, 'styles/plugins'), {
+          recursive: true,
+          force: true,
+        });
+        if (
+          results &&
+          results.successfulSetups &&
+          results.successfulSetups.length
+        ) {
+          console.log('Updating plugins...');
+
+          let {
+            updatedThemeLayoutFileContent,
+            updatedImportsCode,
+            sectionPositionData,
+            combinedPluginData,
+          } = await transformPluginData(
+            results,
+            outputPath,
+            frontendPath,
+            ext,
+            transformedThemeLayoutFileContent,
+            importsCode
           );
-
-          // Define the regular expression to find the content between // content-slot and // end-content-slot
-          const contentSlotRegex =
-            /(\/\/ content-slot[\s\S]*?\/\/ end-content-slot)/;
-
-          let updatedContent = themeLayoutFileContent.replace(
-            contentSlotRegex,
-            `// content-slot${updatedThemeLayoutFileContent}// end-content-slot`
+          updatedCombinedPluginData = combinedPluginData;
+          combinedSectionPositionData = _.merge(
+            {},
+            combinedSectionPositionData,
+            sectionPositionData
           );
+          combinedSectionPositionData = orderSections(
+            combinedSectionPositionData
+          );
+          try {
+            let templateLayoutCode = getLayoutSectionSlotCode();
+            updatedThemeLayoutFileContent =
+              updatedThemeLayoutFileContent.replace(
+                '{/* children */}',
+                templateLayoutCode
+              );
 
-          if (updatedImportsCode) {
-            updatedContent = updatedContent.replace(
-              '// end-import-slot',
-              `${updatedImportsCode}\n// end-import-slot`
+            // Define the regular expression to find the content between // content-slot and // end-content-slot
+            const contentSlotRegex =
+              /(\/\/ content-slot[\s\S]*?\/\/ end-content-slot)/;
+
+            let updatedContent = themeLayoutFileContent.replace(
+              contentSlotRegex,
+              `// content-slot${updatedThemeLayoutFileContent}// end-content-slot`
             );
+
+            if (updatedImportsCode) {
+              updatedContent = updatedContent.replace(
+                '// end-import-slot',
+                `${updatedImportsCode}\n// end-import-slot`
+              );
+            }
+
+            const formattedCode = await prettier.format(updatedContent, {
+              parser: language,
+            });
+            const dir = path.dirname(builtLayoutFilePath);
+
+            await fsp.mkdir(dir, {recursive: true});
+            await fsp.writeFile(builtLayoutFilePath, formattedCode, null);
+
+            await createMergedData(
+              outputPath,
+              updatedCombinedPluginData,
+              combinedSectionPositionData,
+              isConfig,
+              frontendPath
+            );
+            if (
+              !isConfig &&
+              themeOrPlugin.plugins &&
+              Array.isArray(themeOrPlugin.plugins)
+            ) {
+              await updatePluginImagesForTheme(
+                themeOrPlugin,
+                frontendPath,
+                type,
+                isConfig
+              );
+            }
+
+            await updateCss(themeOrPlugin, type, namespacePath, frontendPath);
+            return resolve(updatedCombinedPluginData);
+            // // update index.css
+            // // if(theme.plugins && theme.plugins.length){
+            // let indexCssPath = frontendPath
+            //   ? `${frontendPath}/styles${namespacePath}/index.css`
+            //   : path.join(process.cwd(), `styles${namespacePath}/index.css`);
+
+            // // const indexCssPath = `${frontendPath}/styles/index.css`;
+            // let cssData: any = await fs.promises.readFile(
+            //   indexCssPath,
+            //   'utf8'
+            // );
+            // console.log({indexCssPath});
+            // console.log({cssData});
+            // if (cssData) {
+            //   let cssString = ``;
+            //   console.log({});
+            //   if (type === 'theme' && themeOrPlugin.plugins) {
+            //     for (let i = 0; i < themeOrPlugin.plugins.length; i++) {
+            //       const plugin = themeOrPlugin.plugins[i];
+            //       if (
+            //         !cssData.includes(`@import 'plugins/${plugin}/index.css`)
+            //       ) {
+            //         cssString += `@import 'plugins/${plugin}/index.css';\n`;
+            //       }
+            //     }
+            //   }
+            //   cssString += `@import 'globals.css';`;
+            //   console.log({cssString});
+            //   cssData = cssData.replace(`@import 'globals.css';`, cssString);
+            //   console.log('updated css data', cssData);
+            //   await fs.promises.writeFile(indexCssPath, cssData);
+            // }
+          } catch (error) {
+            console.error('Error: Unable to build layout file.', error);
+            process.exit(1);
           }
+        }
+        // else {
+        // const {combinedData, type} = await getCombinedData(false);
+        // let transformedData = await transformData(combinedData.data);
+        // console.log({updatedCombinedPluginData})
+        // await createMergedData(
+        //   outputPath,
+        //   transformedData,
+        //   combinedSectionPositionData,
+        //   isConfig,
+        //   frontendPath
+        // );
+        // return resolve();
+        // }
+      })
+      .catch(error => {
+        console.error('An error occurred during setup:', error);
+        process.exit(1);
+      });
+  });
+}
 
-          const formattedCode = await prettier.format(updatedContent, {
-            parser: language,
-          });
-          const dir = path.dirname(builtLayoutFilePath);
+async function updateCss(
+  themeOrPlugin: ThemeOrPlugin,
+  type: string,
+  namespacePath: string,
+  frontendPath?: string
+) {
+  // update index.css
+  // if(theme.plugins && theme.plugins.length){
+  let indexCssPath = frontendPath
+    ? `${frontendPath}/styles/index.css`
+    : path.join(process.cwd(), `styles/index.css`);
 
-          await fsp.mkdir(dir, {recursive: true});
-          await fsp.writeFile(builtLayoutFilePath, formattedCode, null);
-        } catch (error) {
-          console.error('Error: Unable to build layout file.', error);
+  // const indexCssPath = `${frontendPath}/styles/index.css`;
+  let cssData: any = await fs.promises.readFile(indexCssPath, 'utf8');
+  console.log(path.join(process.cwd(), indexCssPath));
+  if (cssData) {
+    let cssString = ``;
+    if (type === 'theme' && themeOrPlugin.plugins) {
+      for (let i = 0; i < themeOrPlugin.plugins.length; i++) {
+        const plugin = themeOrPlugin.plugins[i];
+        if (!cssData.includes(`@import 'plugins/${plugin}/index.css`)) {
+          cssString += `@import 'plugins/${plugin}/index.css';\n`;
         }
       }
-      await createMergedData(
-        outputPath,
-        updatedCombinedPluginData,
-        combinedSectionPositionData
-      );
-      if (theme.plugins && Array.isArray(theme.plugins))
-        setupImages(theme.plugins);
-    })
-    .catch(error => {
-      console.error('An error occurred during setup:', error);
-    });
+    } else if (type === 'plugin') {
+      if (!cssData.includes(`@import '${namespacePath}/index.css`)) {
+        cssString += `@import '${namespacePath}/index.css';\n`;
+      }
+    }
+    cssString += `@import 'globals.css';`;
+    cssData = cssData.replace(`@import 'globals.css';`, cssString);
+
+    try {
+      await fsp.writeFile(path.join(process.cwd(), indexCssPath), cssData);
+      console.log('File successfully written!');
+    } catch (error) {
+      console.error('Error writing file:', error);
+    }
+  }
 }
 
 const transformSectionPositionData = (
@@ -293,17 +773,17 @@ function getLayoutCode(code: string) {
 }
 
 async function setupPlugins(
-  theme: Theme,
+  themeOrPlugin: ThemeOrPlugin,
   apiKey: string
 ): Promise<{
   successfulSetups: SetupResult[];
   failedSetups: SetupResult[];
 } | null> {
-  if (theme) {
-    if (!theme.plugins) {
+  if (themeOrPlugin) {
+    if (!themeOrPlugin.plugins) {
       return null;
     }
-    const plugins = theme.plugins;
+    const plugins = themeOrPlugin.plugins;
 
     const requests = plugins.map(async namespace => {
       const url = `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/themes/setup`;
@@ -383,14 +863,15 @@ async function transformPluginData(
             outputPath,
             srcDir
           );
-
+          // console.log({transformedData})
+          // console.log({combinedData})
           combinedData = _.mergeWith(
             {},
             combinedData,
             transformedData,
             customizer
           );
-
+          // console.log('combined data after mergewith', combinedData)
           if (data.components[`plugins/${setup.namespace}/layout.${ext}`]) {
             let pluginLayoutFileContent: string =
               data.components[`plugins/${setup.namespace}/layout.${ext}`];
@@ -448,7 +929,7 @@ async function writePluginFiles(
   try {
     for (const [filePath, content] of Object.entries(data.components || {})) {
       const targetPath = path.join(srcDir, 'components', filePath);
-
+      // console.log({targetPath})
       writeTasks.push(
         fsp
           .mkdir(path.dirname(targetPath), {recursive: true})
@@ -485,19 +966,31 @@ async function writePluginFiles(
 
     for (const [filePath, content] of Object.entries(data.data || {})) {
       const targetPath = path.join(
+        srcDir,
         'public/data',
         `plugins/${namespace}`,
         filePath
       );
+      if (filePath === 'sections.json' || filePath === 'templates.json') {
+        // Get the key (sections or templates) dynamically
+        const key = Object.keys(content as any)[0];
+        // Ensure the key exists and content[key] is an array
+        if (key && Array.isArray((content as any)[key])) {
+          (content as any)[key] = (content as any)[key].map((item: any) => ({
+            ...item,
+            namespace, // Add the namespace property
+          }));
+          data[filePath] = content;
+        }
+      }
       writeTasks.push(
         fsp
           .mkdir(path.dirname(targetPath), {recursive: true})
           .then(() => fsp.writeFile(targetPath, JSON.stringify(content)))
       );
     }
-
     await Promise.all(writeTasks);
-
+    // console.log('transformData...')
     transformedData = transformData(data.data, namespace);
     return transformedData;
   } catch (error) {
@@ -506,7 +999,11 @@ async function writePluginFiles(
   }
 }
 
-function transformData(data: InputData, namespace: string): Data {
+export function transformData(
+  data: Record<string, any>,
+  namespace?: string
+): Data {
+  console.log('transformData...', namespace);
   const transformed: Data = {
     collections: {},
     contentTypes: [],
@@ -519,33 +1016,35 @@ function transformData(data: InputData, namespace: string): Data {
     },
     global: {},
   };
-
   for (const [key, value] of Object.entries(data)) {
     const newKey = toCamelCase(
       key.split('/').pop()?.replace('.json', '') || ''
     );
+    console.log('key--->', key);
     if (key.startsWith('collections') && value.data) {
       transformed.collections[newKey] = value.data;
     } else if (
       ['contentTypes', 'pages', 'sections', 'templates'].includes(newKey)
     ) {
-      if (newKey === 'sections' && value.sections) {
-        Object.keys(value.sections).forEach(sectionName => {
-          value.sections![sectionName].namespace = namespace;
+      if (
+        namespace &&
+        (newKey === 'sections' ||
+          newKey === 'templates' ||
+          newKey === 'contentTypes') &&
+        value[newKey]
+      ) {
+        Object.keys(value[newKey]).forEach(name => {
+          value[newKey]![name].namespace = namespace;
         });
-        transformed[newKey as keyof Data] = value.sections as any;
-      }else if (newKey === 'templates' && value.templates) {
-        Object.keys(value.templates).forEach(templateName => {
-          value.templates![templateName].namespace = namespace;
-        });
-        transformed[newKey as keyof Data] = value.templates as any;
-       } else {
+        transformed[newKey as keyof Data] = value[newKey] as any;
+      } else {
         transformed[newKey as keyof Data] = value[
           newKey as keyof DataFile
         ] as any;
       }
     }
   }
+  // console.log({transformed})
   return transformed;
 }
 
@@ -592,12 +1091,23 @@ const customizer = (objValue: any, srcValue: any, key: string) => {
 async function createMergedData(
   outputPath: string,
   pluginsData: any,
-  pageSections: any
+  pageSections: any,
+  isConfig?: boolean,
+  frontendPath?: string
 ): Promise<void> {
-  const dataPath = 'public/data';
-  const themeData = await getThemeData();
+  const dataPath = `${frontendPath ? `${frontendPath}/` : ''}public/data`;
+  console.log({dataPath});
+  const themeData = await getThemeData(frontendPath);
+  console.log({themeData});
+  console.log({pluginsData});
   const mergedData: Data = mergeData(themeData, pluginsData);
+  console.log({mergedData});
   let updatedPages = themeData.pages;
+  console.log(
+    'Object.keys(pluginsData).length',
+    Object.keys(pluginsData).length
+  );
+  console.log({pageSections});
   if (Object.keys(pluginsData).length > 0) {
     // Handle the merging of pages separately
     updatedPages = pluginsData.pages.map((existingPage: Page) => {
@@ -614,6 +1124,16 @@ async function createMergedData(
       }
       return existingPage;
     });
+  } else {
+    updatedPages = themeData.pages.map((page: Page) => {
+      const positions = pageSections[page.name] || {};
+      console.log({positions});
+      const demoSections = Object.keys(positions)
+        .map(name => ({name}))
+        .sort((a, b) => positions[a.name] - positions[b.name]);
+      page.demoSections = demoSections;
+      return page;
+    });
   }
   updatedPages = updatePages(themeData, updatedPages, pageSections);
   mergedData.pages = updatedPages;
@@ -624,14 +1144,19 @@ async function createMergedData(
   }
 
   // Read collection data and merge
-  const collectionsDir = path.join(dataPath, 'collections');
-  const collectionFiles = await fsp.readdir(collectionsDir);
+  const collectionsDir = path.join(
+    isConfig ? 'config' : '',
+    'public/data',
+    'collections'
+  );
 
+  const collectionFiles = await fsp.readdir(collectionsDir);
+  console.log('collectionsFiles length--->', collectionsDir);
   for (const file of collectionFiles) {
     const collectionData = await readJsonFile(path.join(collectionsDir, file));
     const collectionName = _.camelCase(path.basename(file, path.extname(file)));
+    console.log('collectionsName--->', collectionName);
     const dataArray = collectionData.data || collectionData;
-
     if (!mergedData.collections[collectionName]) {
       mergedData.collections[collectionName] = [];
     }
@@ -640,9 +1165,11 @@ async function createMergedData(
       mergedData.collections[collectionName].concat(dataArray);
   }
   const dir = path.dirname(outputPath);
-
+  // console.log('mkdir1', dir)
   // Ensure the directory exists
   await fsp.mkdir(dir, {recursive: true});
+  // console.log('mergedData--->', mergedData);
+  // console.log('endmkdir1', dir)
   // Write the merged data back to _data.json
   await fsp.writeFile(outputPath, JSON.stringify(mergedData, null, 2), 'utf8');
 }
@@ -663,14 +1190,16 @@ const orderSections = (sections: Sections): Sections => {
   return orderedSections;
 };
 
-async function getThemeData(): Promise<Data> {
-  const dataPath = 'public/data';
-
+async function getThemeData(frontendPath?: string): Promise<Data> {
+  const dataPath = `${frontendPath ? `${frontendPath}/` : ''}public/data`;
+  console.log({dataPath});
+  console.log(path.join(dataPath, 'schemas/content-types.json'));
   // Read data from other files
   const pagesData = await readJsonFile(path.join(dataPath, 'pages.json'));
   const contentTypesData = await readJsonFile(
     path.join(dataPath, 'schemas/content-types.json')
   );
+  console.log({contentTypesData});
   const sectionsData = await readJsonFile(path.join(dataPath, 'sections.json'));
   const templatesData = await readJsonFile(
     path.join(dataPath, 'templates.json')
@@ -693,7 +1222,7 @@ async function getThemeData(): Promise<Data> {
 
 async function readJsonFile(filePath: string): Promise<any> {
   try {
-    const data = await fsp.readFile(path.join(process.cwd(), filePath), 'utf8');
+    const data = await fsp.readFile(filePath, 'utf8');
     return JSON.parse(data);
   } catch (error: any) {
     if (error.code === 'ENOENT') {
@@ -710,6 +1239,7 @@ function updatePages(
   pageSections: Record<string, number>
 ): Page[] {
   if (!mergedPages) {
+    console.log('returning theme updated page demo sections...');
     return themeData.pages.map((page: Page) => {
       updatePageDemoSections(page, pageSections);
       return page;
@@ -720,7 +1250,7 @@ function updatePages(
       const pageExists = mergedPages.some(
         mergedPage => mergedPage.name === page.name
       );
-
+      console.log({pageExists});
       if (!pageExists) {
         updatePageDemoSections(page, pageSections);
         acc.push(page);
@@ -736,6 +1266,7 @@ function updatePageDemoSections(
   page: Page,
   pageSections: Record<string, number>
 ) {
+  console.log('updatePageDemoSections...');
   if (!page.demoSections || page.demoSections.length === 0) {
     const positions = pageSections[page.name] || {};
     const demoSections = Object.keys(positions).map(name => ({name}));

@@ -15,11 +15,20 @@ import * as _ from 'lodash';
 // import {mergeData, Data, Page, Section} from '../lib/setup/setup-theme/merge-data';
 // import { setupImages } from '../lib/setup/setup-theme/setup-images';
 import {setupSiteData} from '../lib/setup/setup-site/import-data/import-data';
-import {updateTheme} from '../lib/setup/setup-theme/setup-theme';
+import {update} from '../lib/setup/setup-theme/setup-theme';
+import {
+  getApiKey,
+  promptForApiKey,
+  saveApiKeyToConfig,
+  validateApiKey,
+} from '../lib/apiKeyUtils';
 
-interface Theme {
+interface ThemeOrPlugin {
+  // [key: string]: {
   language?: string;
   plugins: string[];
+  namespace: string;
+  // };
 }
 
 // interface SetupResult {
@@ -28,19 +37,28 @@ interface Theme {
 //   error?: any;
 // }
 
-async function getTheme(): Promise<Theme | null> {
-  const themeFilePath = path.join(process.cwd(), 'public/data/theme.json');
+export async function getThemeOrPlugin(
+  type: string,
+  isConfig?: boolean
+): Promise<ThemeOrPlugin | null> {
+  console.log('getThemeOrPlugin...');
+  const themeFilePath = path.join(
+    process.cwd(),
+    `${isConfig ? 'config/' : ''}public/data/${type}.json`
+  );
+  console.log({themeFilePath});
   try {
     const data: string = await fs.readFile(themeFilePath, 'utf8');
-    const parsedData = JSON.parse(data) as {theme: Theme};
-    return parsedData.theme;
+    console.log({data});
+    const parsedData = JSON.parse(data);
+    return parsedData[type];
   } catch (error: any) {
     if (error.code === 'ENOENT') {
       // File does not exist
       return null;
     } else if (error instanceof SyntaxError) {
       // JSON parsing error
-      console.error('Error parsing theme.json:', error);
+      console.error(`Error parsing ${type}.json:`, error);
       throw error;
     } else {
       // Some other error occurred
@@ -58,22 +76,55 @@ async function fileExists(path: string) {
   }
 }
 
-export async function update() {
-  const isPlugin = await fileExists(
-    path.join(process.cwd(), 'public/data/plugin.json')
-  );
-  if (isPlugin) {
+export async function updateThemeOrPlugin() {
+  // const isPlugin = await fileExists(
+  //   path.join(process.cwd(), 'public/data/plugin.json')
+  // );
+  // if (isPlugin) {
+  //   console.error(
+  //     'Error: It looks like this is a plugin. Update is only used on themes.'
+  //   );
+  //   process.exit(1);
+  // }
+  console.log('setup.ts update()...');
+  let type = 'theme';
+  let themeOrPlugin = await getThemeOrPlugin('theme');
+  if (!themeOrPlugin) {
+    themeOrPlugin = await getThemeOrPlugin('plugin');
+    type = 'plugin';
+  }
+  if (!themeOrPlugin) {
     console.error(
-      'Error: It looks like this is a plugin. Update is only used on themes.'
+      'Error: It looks like this not a theme or plugin. Update is only used on themes or plugins.'
     );
     process.exit(1);
   }
-  const theme = await getTheme();
-  await updateTheme(theme);
+  // await validateForUpdate({type, themeOrPlugin});
+  console.log('updateThemeOrPlugin...');
+  if (!themeOrPlugin) {
+    console.error('Error: No theme or plugin.');
+    process.exit(1);
+  }
+  let apiKey = await getApiKey();
+  if (!apiKey) {
+    console.error('Unable to process API key.');
+    process.exit(1);
+  }
+
+  const isValid = await validateApiKey(apiKey);
+  if (!isValid) {
+    console.log('Not valid...');
+    apiKey = await promptForApiKey();
+    console.log({apiKey});
+  }
+  console.log('saveApiKeyToConfig...');
+  await saveApiKeyToConfig(apiKey);
+  console.log(`Updating ${type}...`);
+  await update(themeOrPlugin, type, apiKey, process.cwd());
   console.log('Done!');
 }
 
-export async function setup() {
+export async function setupSite() {
   const isPlugin = await fileExists(
     path.join(process.cwd(), 'public/data/plugin.json')
   );
@@ -83,10 +134,17 @@ export async function setup() {
     );
     process.exit(1);
   }
-  const theme = await getTheme();
+  const theme = await getThemeOrPlugin('theme');
   if (theme) {
     console.error(
       'Error: It looks like this is a theme. Setup is only used on sites.'
+    );
+    process.exit(1);
+  }
+  const plugin = await getThemeOrPlugin('plugin');
+  if (plugin) {
+    console.error(
+      'Error: It looks like this is a plugin. Setup is only used on sites.'
     );
     process.exit(1);
   }

@@ -19,14 +19,49 @@ interface FileData {
   type: string;
 }
 
-async function downloadImage(url: string, fullPath: string): Promise<void> {
+function ensureDirectoryExists(filePath: string): void {
+  const dir = path.dirname(filePath);
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true }); // Use synchronous mkdir with recursive option
+    }
+  } catch (err) {
+    console.error(`Error creating directory ${dir}:`, err);
+    throw err;
+  }
+}
+async function downloadImage(image: {path: string, url: string}, uploadsPath: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    https.get(url, (response) => {
+    // let namespace = image.namespace;
+    // if(!namespace){
+    //   console.log(`Warning: No namespace found for image ${image.path}. Skipping...`)
+    //   return resolve();
+    // }
+    console.log('downloadImage...', image)
+    let fullPath = `${uploadsPath}/${image.path}`;
+    console.log({fullPath})
+    // const [provider, owner, repo] = namespace.split('_');
+    // const {provider, owner, repo} = image.repo;
+    // let imageUrl = '';
+    // let repoName = `${owner}/${repo}`;
+    console.log('downloadImage...')
+    // if (provider === 'gh') {
+    //   imageUrl = `https://raw.githubusercontent.com/${repoName}/main/public${image.path}`;
+    // } else if (provider === 'gl') {
+    //   imageUrl = `https://gitlab.com/${repoName}/-/raw/main/public${image.path}`;
+    // } else if (provider === 'bb') {
+    //   imageUrl = `https://bitbucket.org/${repoName}/raw/main/public${image.path}`;
+    // } else {
+    //   console.log('Namespace does not start with a recognised prefix.');
+    // }
+    console.log('Getting image...', image.url)
+    https.get(image.url, (response) => {
       if (response.statusCode !== 200) {
-        reject(new Error(`Failed to download image: ${url}. Status code: ${response.statusCode}`));
+        reject(new Error(`Failed to download image: ${image.url}. Status code: ${response.statusCode}`));
         return;
       }
-
+      ensureDirectoryExists(fullPath);
+      console.log('Writing image...', fullPath)
       const writeStream = fs.createWriteStream(fullPath);
       response.pipe(writeStream);
 
@@ -43,6 +78,40 @@ async function downloadImage(url: string, fullPath: string): Promise<void> {
     });
   });
 }
+// async function downloadImage(url: string, fullPath: string): Promise<void> {
+//   return new Promise((resolve, reject) => {
+//     let repoName = `${repoConfig.owner}/${repoConfig.repo}`;
+//     if (provider === 'gh') {
+//       imageUrl = `https://raw.githubusercontent.com/${repoName}/main/${image.path}`;
+//     } else if (provider === 'gl') {
+//       imageUrl = `https://gitlab.com/${repoName}/-/raw/main/${image.path}`;
+//     } else if (provider === 'bb') {
+//       imageUrl = `https://bitbucket.org/${repoName}/raw/main/${image.path}`;
+//     } else {
+//       console.log('Namespace does not start with a recognised prefix.');
+//     }
+//     https.get(url, (response) => {
+//       if (response.statusCode !== 200) {
+//         reject(new Error(`Failed to download image: ${url}. Status code: ${response.statusCode}`));
+//         return;
+//       }
+//       ensureDirectoryExists(fullPath);
+//       const writeStream = fs.createWriteStream(fullPath);
+//       response.pipe(writeStream);
+
+//       writeStream.on("finish", () => {
+//         writeStream.close();
+//         resolve();
+//       });
+
+//       writeStream.on("error", (err) => {
+//         reject(err);
+//       });
+//     }).on("error", (err) => {
+//       reject(err);
+//     });
+//   });
+// }
 
 async function getFileSizeInBytes(filePath: string): Promise<number> {
   const stats = await fsp.stat(filePath);
@@ -121,7 +190,8 @@ async function getFileData(file: FileObject): Promise<FileData> {
     await fsp.mkdir(path.join(uploadsPath, directoryPath), {recursive: true});
   }
 
-  await downloadImage(imageUrl, fullPath);
+  // FIXME: Need to update this...
+  // await downloadImage(imageUrl, fullPath);
 
   const size = await getFileSizeInBytes(fullPath);
   const mimeType = `image/${fileExtension === 'svg' ? 'svg+xml' : fileExtension}`;
@@ -221,4 +291,4 @@ async function getFilesData(files: any): Promise<Record<string, FileData | FileD
 //   return fileData;
 // }
 
-export { getFileSizeInBytes, getFileData, getFilesData };
+export { getFileSizeInBytes, getFileData, getFilesData, downloadImage };

@@ -10,23 +10,81 @@ import * as path from 'path';
 import {Constants} from '../constants';
 import {getSrcDir} from '../utils';
 import * as zlib from 'zlib';
+import { CombinedData } from '../interfaces';
 
-interface CombinedData {
-  data: Record<string, any>;
-  components: Record<string, string>;
-  lib: Record<string, string>;
-  styles: Record<string, string>;
-  api: Record<string, string>;
-  config: Record<string, string>;
+
+async function publish() {
+  // const publicDir = path.join(process.cwd(), 'public/data');
+  // if (!fs.existsSync(publicDir)) {
+  //   console.error('The public directory does not exist.');
+  //   process.exit(1);
+  // }
+
+  // const srcDir = getSrcDir();
+  // const componentsDir = `${srcDir}/components`;
+  // const libDir = `${srcDir}/lib`;
+  // const stylesDir = `${srcDir}/styles`;
+  // const apiDir = `${srcDir}/pages/api`;
+
+  // const jsonFiles = getAllFiles(publicDir).filter(file =>
+  //   file.path.endsWith('.json')
+  // );
+  // const combinedData: CombinedData = {
+  //   data: {},
+  //   components: {},
+  //   lib: {},
+  //   styles: {},
+  //   api: {},
+  //   config: {},
+  // };
+
+  // collectData(publicDir, jsonFiles, combinedData.data, true);
+  // let type = null;
+  // if (combinedData.data['theme.json']) {
+  //   type = Constants.TYPES.theme;
+  // } else if (combinedData.data['plugin.json']) {
+  //     type = Constants.TYPES.plugin;
+  //   }else {
+  //     console.error(
+  //       'Project is neither a theme nor plugin. No theme.json or plugin.json file found.'
+  //     );
+  //     process.exit(1);
+  //   }
+    
+  //   const componentFiles = getAllFiles(componentsDir);
+  //   collectData(componentsDir, componentFiles, combinedData.components);
+
+  //   const libFiles = getAllFiles(libDir);
+  //   collectData(libDir, libFiles, combinedData.lib);
+
+  //   const stylesFiles = getAllFiles(stylesDir);
+  //   collectData(stylesDir, stylesFiles, combinedData.styles);
+
+  //   const apiFiles = getAllFiles(apiDir);
+  //   collectData(apiDir, apiFiles, combinedData.api);
+
+  //   collectAllConfigData(combinedData, srcDir);
+
+  const {combinedData, type} = await getCombinedData(true);
+    // Compress combinedData before sending
+    const compressedData = compressData(combinedData);
+
+    try {
+      await sendRequest(type, compressedData);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Failed to upload data and components:', error.message);
+      } else {
+        console.error('Failed to upload data and components:', error);
+      }
+    }
+  
 }
 
-async function publish(options: any) {
-  const publicDir = path.join(process.cwd(), 'public/data');
-  if (!fs.existsSync(publicDir)) {
-    console.error('The public directory does not exist.');
-    process.exit(1);
-  }
 
+export function getCombinedData(collectFilesData: boolean): Promise<{combinedData: CombinedData, type: string}>{
+  return new Promise((resolve) => {
+  const publicDir = path.join(process.cwd(), 'public/data');
   const srcDir = getSrcDir();
   const componentsDir = `${srcDir}/components`;
   const libDir = `${srcDir}/lib`;
@@ -57,6 +115,9 @@ async function publish(options: any) {
       );
       process.exit(1);
     }
+    if(!collectFilesData){
+      return resolve({combinedData, type});
+    }
     
     const componentFiles = getAllFiles(componentsDir);
     collectData(componentsDir, componentFiles, combinedData.components);
@@ -71,20 +132,9 @@ async function publish(options: any) {
     collectData(apiDir, apiFiles, combinedData.api);
 
     collectAllConfigData(combinedData, srcDir);
+      return resolve({combinedData, type});
+  });
 
-    // Compress combinedData before sending
-    const compressedData = compressData(combinedData);
-
-    try {
-      await sendRequest(type, compressedData);
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error('Failed to upload data and components:', error.message);
-      } else {
-        console.error('Failed to upload data and components:', error);
-      }
-    }
-  
 }
 
 

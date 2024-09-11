@@ -3,7 +3,7 @@
 import {program} from 'commander';
 import {init} from './commands/init';
 import {publish} from './commands/publish';
-import {setup, update} from './commands/setup';
+import {setupSite, updateThemeOrPlugin} from './commands/setup';
 
 program
   .command('init')
@@ -20,11 +20,11 @@ program
   program
   .command('setup')
   .description('Setup site.')
-  .action(setup);
+  .action(setupSite);
 
   program
   .command('update')
   .description('Update theme.')
-  .action(update);
+  .action(updateThemeOrPlugin);
 
 program.parse();

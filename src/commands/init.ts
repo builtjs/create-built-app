@@ -2,10 +2,10 @@ import {
   installFrontendSite,
   installFrontendThemeOrPlugin,
 } from '../lib/init/frontend';
-import {installBackendSite} from '../lib/init/backend';
 import * as fs from 'fs';
 import {exists} from '../utils';
 import {Constants} from '../constants';
+import {getThemeOrPlugin} from './setup';
 
 const appMap: any = {};
 const DEFAULT_CMS = 'sanity';
@@ -25,38 +25,50 @@ function getDirectories(path: string) {
  * node build/src/index.js init
  */
 async function init(options: any) {
-  let {type, cms} = options;
+  let {cms} = options;
   if (!cms) {
     cms = DEFAULT_CMS;
   }
   const dirs = getDirectories('./');
-  if (!type || type === Constants.TYPES.site) {
-    installSite(dirs, cms);
-  } else if (
-    type === Constants.TYPES.theme ||
-    type === Constants.TYPES.plugin
-  ) {
-    installThemeOrPlugin(dirs, type);
-  } else {
-    console.log('Type not recognized. Use "site" or "theme".');
+  let themeOrPlugin = await getThemeOrPlugin('theme', true);
+  if(themeOrPlugin){
+    installThemeOrPlugin(dirs, 'theme', themeOrPlugin);
+  }else{
+    themeOrPlugin = await getThemeOrPlugin('plugin', true);
+    if(themeOrPlugin){
+      installThemeOrPlugin(dirs, 'plugin', themeOrPlugin);
+    }else{
+      installSite(dirs, cms);
+    }
   }
+  // if (!type || type === Constants.TYPES.site) {
+  //   installSite(dirs, cms);
+  // } else if (
+  //   type === Constants.TYPES.theme ||
+  //   type === Constants.TYPES.plugin
+  // ) {
+  //   installThemeOrPlugin(dirs, type);
+  // } else {
+  //   console.log('Type not recognized. Use "site" or "theme".');
+  // }
 }
 
-function installThemeOrPlugin(dirs: any, type: string) {
+async function installThemeOrPlugin(dirs: any, type:string, themeOrPlugin: any) {
   getDep(dirs, Constants.DEPS.next);
   if (!appMap[Constants.DEPS.next]) {
     console.log(
       'No Next.js project found. Did you remember to create it? See README.md for more details.'
     );
-    return;
+    process.exit(1);
   }
+
   let frontendPath = appMap[Constants.DEPS.next];
   let rootDir = '/src';
   let srcPath = `${frontendPath}${rootDir}`;
   if (!exists(srcPath)) {
     rootDir = '';
   }
-  installFrontendThemeOrPlugin(appMap[Constants.DEPS.next], rootDir, type);
+  installFrontendThemeOrPlugin(appMap[Constants.DEPS.next], rootDir, type, themeOrPlugin);
 }
 
 async function installSite(dirs: any, cms: string) {
@@ -78,10 +90,6 @@ async function installSite(dirs: any, cms: string) {
     console.error(err);
     return;
   });
-
-  if (cms === 'strapi') {
-    installBackendSite(appMap[Constants.DEPS.strapi]);
-  }
 
   console.log('Done!');
 }
