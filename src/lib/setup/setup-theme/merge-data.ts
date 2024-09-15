@@ -62,6 +62,7 @@ export type Data = {
   layout: Layout;
   global: Global;
   collections: Collection;
+  plugins: string[];
 };
 
 function mergeArraysDistinct<T extends { name: string; namespace?: string }>(
@@ -138,5 +139,6 @@ export function mergeData(data1: Data, data2: Data): Data {
     layout: mergeObjects<Layout>(data1.layout, data2.layout),
     global: mergeObjects<Global>(data1.global, data2.global),
     collections: mergeObjects<Collection>(data1.collections, data2.collections),
+    plugins: data1.plugins || []
   };
 }

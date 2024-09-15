@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { createClient } from 'next-sanity';
+import {createClient} from 'next-sanity';
 import importPageData from './import-page-data';
 import importEntryData from './import-entry-data';
 import importLayoutData from './import-layout-data';
@@ -7,7 +7,7 @@ import importGlobalData from './import-global-data';
 import importPageElementData from './import-page-element-data';
 import importElementData from './import-element-data';
 import * as path from 'path';
-import { promises as fs } from 'fs';
+import {promises as fs} from 'fs';
 
 const dataPath = path.join(process.cwd(), 'setup/data.json');
 
@@ -29,16 +29,18 @@ export async function setupSiteData(): Promise<void> {
     const sanityDataset = getEnvVariable('NEXT_PUBLIC_SANITY_DATASET');
     const sanityWriteToken = getEnvVariable('NEXT_PUBLIC_SANITY_WRITE_TOKEN');
     const sanityApiVersion = getEnvVariable('NEXT_PUBLIC_SANITY_API_VERSION');
-    
+
     client = createClient({
       projectId: sanityProjectId,
       dataset: sanityDataset,
       token: sanityWriteToken,
       useCdn: false,
-      apiVersion: sanityApiVersion
+      apiVersion: sanityApiVersion,
     });
   } catch (error) {
-    console.error(`Failed to load environment variables: ${(error as Error).message}`);
+    console.error(
+      `Failed to load environment variables: ${(error as Error).message}`
+    );
     process.exit(1);
   }
 
@@ -61,6 +63,11 @@ export async function setupSiteData(): Promise<void> {
     console.log('Page data import complete');
 
     await importEntryData(client, data.entries);
+
+    const uploadsDirPath = `setup/uploads`;
+    const uploadsPath = path.join(process.cwd(), uploadsDirPath);
+    await fs.rm(uploadsPath, {recursive: true, force: true});
+
     console.log('Done!');
     process.exit(1);
   } catch (error) {

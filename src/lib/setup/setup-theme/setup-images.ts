@@ -21,6 +21,11 @@ interface Section {
   namespace: string;
 }
 
+interface Element {
+  name: string;
+  fields: {[key: string]: Field};
+}
+
 interface ContentType {
   name: string;
   fields: {[key: string]: Field};
@@ -30,6 +35,7 @@ interface Schema {
   global: {fields: {[key: string]: Field}};
   sections: {[key: string]: Section};
   contentTypes: ContentType[];
+  elements: Element[];
 }
 
 interface BuiltSection {
@@ -88,6 +94,27 @@ function findImageFieldsInSections(sections: {[key: string]: Section}): {
   return result;
 }
 
+// Function to find image fields in elements schema
+function findImageFieldsInElements(elements: Element[]): {
+  [key: string]: {fields: string[]; namespace?: string};
+} {
+  const result: {[key: string]: {fields: string[]}} = {};
+  for (const element of elements) {
+    const fields = element.fields;
+
+    if (fields) {
+      const imageFields = Object.keys(fields).filter(
+        field => fields[field].type === 'image'
+      );
+      if (imageFields.length > 0) {
+        result[element.name] = {fields: imageFields};
+      }
+    }
+  }
+  console.log('element result:', result)
+  return result;
+}
+
 // Function to find image fields in sections schema
 function findImageFieldsInContentTypes(contentTypes: ContentType[]): {
   [key: string]: {fields: string[]; namespace?: string};
@@ -95,48 +122,17 @@ function findImageFieldsInContentTypes(contentTypes: ContentType[]): {
   const result: {[key: string]: {fields: string[]; namespace?: string}} = {};
   for (const contentType of contentTypes) {
     const fields = contentType.fields;
-    // const namespace = contentType.namespace;
     if (fields) {
       const imageFields = Object.keys(fields).filter(
         field => fields[field].type === 'image'
       );
       if (imageFields.length > 0) {
         result[contentType.name] = {fields: imageFields};
-        // if (namespace) {
-        //   result[contentType.name].namespace = namespace;
-        // }
-        // result[contentType.name] = imageFields;
       }
     }
   }
-  // console.log('contentTypes images result:', result);
   return result;
 }
-// function findImageFieldsInContentTypes(
-//   contentTypes: Array<Record<string, any>>
-// ): {
-//   [key: string]: {fields: string[]; namespace?: string};
-// } {
-//   const result: {[key: string]: {fields: string[]; namespace?: string}} = {};
-//   console.log({contentTypes});
-//   for (const contentType of contentTypes) {
-//     const fields = contentType.fields;
-//     const namespace = contentType.namespace;
-//     if (fields) {
-//       const imageFields = Object.keys(fields).filter(
-//         field => fields[field].type === 'image'
-//       );
-//       if (imageFields.length > 0) {
-//         result[contentType.name] = {fields: imageFields};
-//         if (namespace) {
-//           result[contentType.name].namespace = namespace;
-//         }
-//         // result[contentType.name] = imageFields;
-//       }
-//     }
-//   }
-//   return result;
-// }
 
 function getImageDataFromBuilt(
   builtData: BuiltData,
@@ -146,31 +142,20 @@ function getImageDataFromBuilt(
   },
   contentTypeSchemaImageFields: {
     [key: string]: {fields: string[]; namespace?: string};
+  },
+  elementSchemaImageFields: {
+    [key: string]: {fields: string[]};
   }
-): {path: string; url: string;}[] {
-  // console.log('getImageDataFromBuilt...');
-  // console.log('contentTypeImageFields...', contentTypeSchemaImageFields);
-  // contentTypeSchemaImageFields;
-  const images: {path: string; url: string;}[] = [];
+): {path: string; url: string}[] {
+  console.log('getImageDataFromBuilt...', Object.keys(builtData).length)
+  const images: {path: string; url: string}[] = [];
   const addedPaths = new Set<string>(); // Set to track added paths
 
   // Helper function to add an image path if it doesn't already exist
   function addImage(image: any) {
-    if (
-      !addedPaths.has(
-        image.path
-      )
-    ) {
-      // let image = {path: imagePath, namespace: ''};
-      // if (namespace) {
-      //   image.namespace = namespace;
-      // }
-      // console.log({namespace});
-      // console.log({image});
+    if (!addedPaths.has(image.path)) {
       images.push(image);
-      addedPaths.add(
-        image.path
-      );
+      addedPaths.add(image.path);
     }
   }
 
@@ -181,23 +166,82 @@ function getImageDataFromBuilt(
       addImage(image);
     }
   });
-  console.log({sectionSchemaImageFields})
+
   // Get section images
   builtData.sections.forEach(section => {
-    const sectionName = section.name;
-    console.log('sectionSchemaImageFields[sectionName]', sectionSchemaImageFields[sectionName])
+
+    if(section.data){
+      const sectionName = section.name;
+      console.log(
+        'sectionSchemaImageFields[sectionName]',
+        sectionSchemaImageFields[sectionName]
+      );
+
     if (sectionSchemaImageFields[sectionName]) {
       sectionSchemaImageFields[sectionName].fields.forEach(field => {
         const image = section.data[field];
-        // console.log({field})
-        // console.log({image})
         if (image && image.path && image.url) {
           addImage(image);
         }
       });
     }
+    console.log('...1', section)
+    console.log('...1->', section.data)
+    Object.keys(section.data).map((fieldOrArray: any) => {
+      console.log('...2', fieldOrArray)
+      if (Array.isArray(section.data[fieldOrArray])) {
+        console.log('...3')
+        let singularName = pluralize.singular(fieldOrArray);
+        section.data[fieldOrArray].forEach((element: any) => {
+          console.log('...4', element)
+          for (const key in element) {
+            console.log('...5 key', key)
+            console.log('...5 fields', elementSchemaImageFields)
+            if (elementSchemaImageFields[singularName] && elementSchemaImageFields[singularName].fields && elementSchemaImageFields[singularName].fields.includes(key)) {
+              console.log('...6', element[key])
+              const image = element[key];
+              if (image && image.path && image.url) {
+                console.log('...7')
+                addImage(image);
+              }
+            }
+          }
+        });
+      }else{
+        for (const key in fieldOrArray) {
+          if (sectionSchemaImageFields[key]) {
+            const image = fieldOrArray[key];
+            // const image = el[fieldName];
+            if (image && image.path && image.url) {
+              addImage(image);
+            }
+          }
+        }
+      }
+      
+    });
+  }
+    // if (elementSchemaImageFields[sectionName]) {
+    //   if (Array.isArray(elementSchemaImageFields[sectionName])) {
+    //     elementSchemaImageFields[sectionName].forEach((element: any) => {
+    //       element.fields.forEach((field: Field) => {
+    //         const image = section.data[field];
+    //         if (image && image.path && image.url) {
+    //           addImage(image);
+    //         }
+    //       });
+    //     });
+    //   } else {
+    //     elementSchemaImageFields[sectionName].fields.forEach(field => {
+    //       const image = section.data[field];
+    //       if (image && image.path && image.url) {
+    //         addImage(image);
+    //       }
+    //     });
+    //   }
+    // }
   });
-
+console.log('contentTypeSchemaImageFields',contentTypeSchemaImageFields)
   // Get collection images
   builtData.contentTypes.forEach(contentType => {
     const contentTypeName = contentType.name;
@@ -205,49 +249,23 @@ function getImageDataFromBuilt(
     if (contentTypeSchemaImageFields[contentTypeName]) {
       contentTypeSchemaImageFields[contentTypeName].fields.forEach(field => {
         const collectionName = pluralize(contentTypeName);
+        console.log('collectionName:', collectionName);
         const dataArray = builtData.collections[collectionName];
-        // console.log(
-        //   'contentTypeImageFields[contentTypeName]',
-        //   contentTypeSchemaImageFields[contentTypeName]
-        // );
-        // console.log('dataArray', dataArray);
+        console.log('dataArray:', dataArray);
         // Ensure `dataArray` is an array and iterate over it
         if (Array.isArray(dataArray)) {
           dataArray.forEach(item => {
             // Check if the object contains the field and the field has a path
             const image = item[field];
-            // console.log({image})
-            // console.log({image});
             if (image && image.path && image.url) {
-              // const namespace = contentTypeImageFields[contentTypeName]
-              //   .namespace
-              //   ? contentTypeImageFields[contentTypeName].namespace
-              //   : '';
-              //               let namespacePath = '';
-              //               console.log({namespace})
-              // console.log('builtData.plugin:',builtData.plugin);
-              // console.log('builtData.theme:',builtData.theme)
-
-              //               if (
-              //   namespace &&
-              //   (builtData.plugin ||
-              //     (builtData.theme && builtData.theme.namepace !== namespace))
-              // ) {
-              //   const [provider, owner, repo] = namespace.split('_');
-              //   console.log('setting namespace path:', namespacePath)
-              //   namespacePath = `plugins/${provider}_${owner}_${repo}`;
-              // }
-              // const imagePath = path.join('public', namespacePath, image.path);
-              // console.log('addImagePath(imagePath, namespace)', namespace)
-              // console.log('adding image...')
               addImage(image);
-              // addImagePath(imagePath, namespace);
             }
           });
         }
       });
     }
   });
+
   return images;
 }
 
@@ -328,28 +346,21 @@ async function downloadAndSaveImages(
   }
 }
 
-export async function updatePluginImagesForTheme(
+export async function updateImagesForThemeOrPlugin(
   themeOrPlugin: ThemeOrPlugin,
   frontendPath: string,
+  builtData: BuiltData,
   type: string,
   isConfig?: boolean
 ) {
   console.log('updatePluginImagesForTheme...isConfig:', isConfig);
   console.log({frontendPath});
-  const builtDataPath = path.join(
-    frontendPath,
-    `public/data/_built/data.json`
-  );
-  const builtData = (await readJsonFile(builtDataPath)) as BuiltData;
+
   await updateImages(builtData, frontendPath);
   if (type === 'theme' && themeOrPlugin.plugins) {
     for (const pluginNamespace of themeOrPlugin.plugins) {
       console.log({pluginNamespace});
-      await updateImages(
-        builtData,
-        frontendPath,
-        pluginNamespace
-      );
+      await updateImages(builtData, frontendPath, pluginNamespace, true);
     }
   }
 }
@@ -391,6 +402,10 @@ export async function updateImages(
     projectRoot,
     `public/data${pluginPath}/schemas/content-types.json`
   );
+  const elementsSchemaPath = path.join(
+    projectRoot,
+    `public/data${pluginPath}/schemas/elements.json`
+  );
 
   // Read schemas and built data
   const globalSchema = (await readJsonFile(globalSchemaPath)) as Schema;
@@ -398,6 +413,7 @@ export async function updateImages(
   const contentTypesSchema = (await readJsonFile(
     contentTypesSchemaPath
   )) as Schema;
+  const elementsSchema = (await readJsonFile(elementsSchemaPath)) as Schema;
 
   // Find image fields
   const globalSchemaImageFields = findImageFieldsInGlobal(globalSchema.global);
@@ -410,13 +426,17 @@ export async function updateImages(
   const contentTypeSchemaImageFields = findImageFieldsInContentTypes(
     contentTypesSchema.contentTypes
   );
+  const elementSchemaImageFields = findImageFieldsInElements(
+    elementsSchema.elements
+  );
 
   // Get image data
   const images = getImageDataFromBuilt(
     builtData,
     globalSchemaImageFields,
     sectionSchemaImageFields,
-    contentTypeSchemaImageFields
+    contentTypeSchemaImageFields,
+    elementSchemaImageFields
   );
   // console.log({images});
 

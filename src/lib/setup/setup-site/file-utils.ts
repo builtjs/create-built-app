@@ -23,28 +23,31 @@ function ensureDirectoryExists(filePath: string): void {
   const dir = path.dirname(filePath);
   try {
     if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true }); // Use synchronous mkdir with recursive option
+      fs.mkdirSync(dir, {recursive: true}); // Use synchronous mkdir with recursive option
     }
   } catch (err) {
     console.error(`Error creating directory ${dir}:`, err);
     throw err;
   }
 }
-async function downloadImage(image: {path: string, url: string}, uploadsPath: string): Promise<void> {
+async function downloadImage(
+  image: {path: string; url: string},
+  uploadsPath: string
+): Promise<void> {
   return new Promise((resolve, reject) => {
     // let namespace = image.namespace;
     // if(!namespace){
     //   console.log(`Warning: No namespace found for image ${image.path}. Skipping...`)
     //   return resolve();
     // }
-    console.log('downloadImage...', image)
+    // console.log('downloadImage...', image)
     let fullPath = `${uploadsPath}/${image.path}`;
-    console.log({fullPath})
+    console.log({fullPath});
     // const [provider, owner, repo] = namespace.split('_');
     // const {provider, owner, repo} = image.repo;
     // let imageUrl = '';
     // let repoName = `${owner}/${repo}`;
-    console.log('downloadImage...')
+    // console.log('downloadImage...')
     // if (provider === 'gh') {
     //   imageUrl = `https://raw.githubusercontent.com/${repoName}/main/public${image.path}`;
     // } else if (provider === 'gl') {
@@ -54,28 +57,34 @@ async function downloadImage(image: {path: string, url: string}, uploadsPath: st
     // } else {
     //   console.log('Namespace does not start with a recognised prefix.');
     // }
-    console.log('Getting image...', image.url)
-    https.get(image.url, (response) => {
-      if (response.statusCode !== 200) {
-        reject(new Error(`Failed to download image: ${image.url}. Status code: ${response.statusCode}`));
-        return;
-      }
-      ensureDirectoryExists(fullPath);
-      console.log('Writing image...', fullPath)
-      const writeStream = fs.createWriteStream(fullPath);
-      response.pipe(writeStream);
+    // console.log('Getting image...', image.url)
+    https
+      .get(image.url, response => {
+        if (response.statusCode !== 200) {
+          reject(
+            new Error(
+              `Failed to download image: ${image.url}. Status code: ${response.statusCode}`
+            )
+          );
+          return;
+        }
+        ensureDirectoryExists(fullPath);
+        // console.log('Writing image...', fullPath)
+        const writeStream = fs.createWriteStream(fullPath);
+        response.pipe(writeStream);
 
-      writeStream.on("finish", () => {
-        writeStream.close();
-        resolve();
-      });
+        writeStream.on('finish', () => {
+          writeStream.close();
+          resolve();
+        });
 
-      writeStream.on("error", (err) => {
+        writeStream.on('error', err => {
+          reject(err);
+        });
+      })
+      .on('error', err => {
         reject(err);
       });
-    }).on("error", (err) => {
-      reject(err);
-    });
   });
 }
 // async function downloadImage(url: string, fullPath: string): Promise<void> {
@@ -146,31 +155,28 @@ async function getFileSizeInBytes(filePath: string): Promise<number> {
 //   };
 // }
 interface FileObject {
-  repo: {
-    owner: string,
-    repo: string,
-    provider: string
-  };
   path: string;
+  url: string;
   [key: string]: any; // This allows additional properties
 }
 
 async function getFileData(file: FileObject): Promise<FileData> {
-  const uploadsDirPath = `./data/uploads`;
-  let repoConfig = file.repo;
-  let imageUrl = '';
-  let repoName = `${repoConfig.owner}/${repoConfig.repo}`;
-  const provider = repoConfig.provider;
-  if (provider === 'gh') {
-    imageUrl = `https://raw.githubusercontent.com/${repoName}/main/public${file.path}`;
-  } else if (provider === 'gl') {
-    imageUrl = `https://gitlab.com/${repoName}/-/raw/main/public${file.path}`;
-  } else if (provider === 'bb') {
-    imageUrl = `https://bitbucket.org/${repoName}/raw/main/public${file.path}`;
-  } else {
-    console.log('Namespace does not start with a recognised prefix.');
-  }
-  const uploadsPath = path.resolve(__dirname, uploadsDirPath);
+  const uploadsDirPath = `setup/uploads`;
+  // let repoConfig = file.repo;
+  // let imageUrl = '';
+  // let repoName = `${repoConfig.owner}/${repoConfig.repo}`;
+  // const provider = repoConfig.provider;
+  // if (provider === 'gh') {
+  //   imageUrl = `https://raw.githubusercontent.com/${repoName}/main/public${file.path}`;
+  // } else if (provider === 'gl') {
+  //   imageUrl = `https://gitlab.com/${repoName}/-/raw/main/public${file.path}`;
+  // } else if (provider === 'bb') {
+  //   imageUrl = `https://bitbucket.org/${repoName}/raw/main/public${file.path}`;
+  // } else {
+  //   console.log('Namespace does not start with a recognised prefix.');
+  // }
+  // const uploadsPath = path.resolve(__dirname, uploadsDirPath);
+  const uploadsPath = path.join(process.cwd(), uploadsDirPath);
   // const imageUrl = file.url || `${file.path}/${file.name}.${file.ext}`;
   const fullPath = path.join(uploadsPath, file.path);
 
@@ -190,12 +196,19 @@ async function getFileData(file: FileObject): Promise<FileData> {
     await fsp.mkdir(path.join(uploadsPath, directoryPath), {recursive: true});
   }
 
-  // FIXME: Need to update this...
-  // await downloadImage(imageUrl, fullPath);
+  // const uploadsDirPath = `./data/uploads`;
+  // const uploadsPath = path.resolve(__dirname, uploadsDirPath);
+
+  await downloadImage(file, uploadsPath);
 
   const size = await getFileSizeInBytes(fullPath);
   const mimeType = `image/${fileExtension === 'svg' ? 'svg+xml' : fileExtension}`;
-
+  console.log('image->', {
+    path: fullPath,
+    name: fileName,
+    size: size,
+    type: mimeType,
+  });
   return {
     path: fullPath,
     name: fileName,
@@ -237,7 +250,9 @@ async function getFileData(file: FileObject): Promise<FileData> {
 //   return fileData;
 // }
 
-async function getFilesData(files: any): Promise<Record<string, FileData | FileData[]>> {
+async function getFilesData(
+  files: any
+): Promise<Record<string, FileData | FileData[]>> {
   const fileData: Record<string, FileData | FileData[]> = {};
 
   if (!files) return fileData;
@@ -245,15 +260,18 @@ async function getFilesData(files: any): Promise<Record<string, FileData | FileD
     if (Array.isArray(fileOrArray)) {
       const fileDataArray = await Promise.all(
         fileOrArray
-          .filter(file => Object.keys(file).length !== 0 && file.repo && file.path) // Filter out empty objects
+          .filter(file => Object.keys(file).length !== 0 && file.path) // Filter out empty objects
           .map(file => getFileData(file))
       );
       if (fileDataArray.length > 0) {
         fileData[key] = fileDataArray;
       }
-    } 
-      else if (typeof fileOrArray === 'object' && fileOrArray !== null ) {
-      if (Object.keys(fileOrArray).length !== 0 && (fileOrArray as FileObject).repo && (fileOrArray as FileObject).path) { 
+    } else if (typeof fileOrArray === 'object' && fileOrArray !== null) {
+      if (
+        Object.keys(fileOrArray).length !== 0 &&
+        (fileOrArray as FileObject).path &&
+        (fileOrArray as FileObject).url
+      ) {
         const fileDataSingle = await getFileData(fileOrArray as FileObject);
         if (Object.keys(fileDataSingle).length !== 0) {
           fileData[key] = fileDataSingle;
@@ -278,9 +296,9 @@ async function getFilesData(files: any): Promise<Record<string, FileData | FileD
 //       if (fileDataArray.length > 0) {
 //         fileData[key] = fileDataArray;
 //       }
-//     } 
+//     }
 //       else if (typeof fileOrArray === 'object' && fileOrArray !== null) {
-//       if (Object.keys(fileOrArray).length !== 0) { 
+//       if (Object.keys(fileOrArray).length !== 0) {
 //         const fileDataSingle = await getFileData(fileOrArray);
 //         if (Object.keys(fileDataSingle).length !== 0) {
 //           fileData[key] = fileDataSingle;
@@ -291,4 +309,4 @@ async function getFilesData(files: any): Promise<Record<string, FileData | FileD
 //   return fileData;
 // }
 
-export { getFileSizeInBytes, getFileData, getFilesData, downloadImage };
+export {getFileSizeInBytes, getFileData, getFilesData, downloadImage};
