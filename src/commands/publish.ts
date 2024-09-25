@@ -10,115 +10,63 @@ import * as path from 'path';
 import {Constants} from '../constants';
 import {getSrcDir} from '../utils';
 import * as zlib from 'zlib';
-import { CombinedData } from '../interfaces';
-
+import {CombinedData} from '../interfaces';
 
 async function publish() {
-  // const publicDir = path.join(process.cwd(), 'public/data');
-  // if (!fs.existsSync(publicDir)) {
-  //   console.error('The public directory does not exist.');
-  //   process.exit(1);
-  // }
-
-  // const srcDir = getSrcDir();
-  // const componentsDir = `${srcDir}/components`;
-  // const libDir = `${srcDir}/lib`;
-  // const stylesDir = `${srcDir}/styles`;
-  // const apiDir = `${srcDir}/pages/api`;
-
-  // const jsonFiles = getAllFiles(publicDir).filter(file =>
-  //   file.path.endsWith('.json')
-  // );
-  // const combinedData: CombinedData = {
-  //   data: {},
-  //   components: {},
-  //   lib: {},
-  //   styles: {},
-  //   api: {},
-  //   config: {},
-  // };
-
-  // collectData(publicDir, jsonFiles, combinedData.data, true);
-  // let type = null;
-  // if (combinedData.data['theme.json']) {
-  //   type = Constants.TYPES.theme;
-  // } else if (combinedData.data['plugin.json']) {
-  //     type = Constants.TYPES.plugin;
-  //   }else {
-  //     console.error(
-  //       'Project is neither a theme nor plugin. No theme.json or plugin.json file found.'
-  //     );
-  //     process.exit(1);
-  //   }
-    
-  //   const componentFiles = getAllFiles(componentsDir);
-  //   collectData(componentsDir, componentFiles, combinedData.components);
-
-  //   const libFiles = getAllFiles(libDir);
-  //   collectData(libDir, libFiles, combinedData.lib);
-
-  //   const stylesFiles = getAllFiles(stylesDir);
-  //   collectData(stylesDir, stylesFiles, combinedData.styles);
-
-  //   const apiFiles = getAllFiles(apiDir);
-  //   collectData(apiDir, apiFiles, combinedData.api);
-
-  //   collectAllConfigData(combinedData, srcDir);
-
   const {combinedData, type} = await getCombinedData(true);
-    // Compress combinedData before sending
-    const compressedData = compressData(combinedData);
+  // Compress combinedData before sending
+  const compressedData = compressData(combinedData);
 
-    try {
-      await sendRequest(type, compressedData);
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error('Failed to upload data and components:', error.message);
-      } else {
-        console.error('Failed to upload data and components:', error);
-      }
+  try {
+    await sendRequest(type, compressedData);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Failed to upload data and components:', error.message);
+    } else {
+      console.error('Failed to upload data and components:', error);
     }
-  
+  }
 }
 
+export function getCombinedData(
+  collectFilesData: boolean
+): Promise<{combinedData: CombinedData; type: string}> {
+  return new Promise(resolve => {
+    const publicDir = path.join(process.cwd(), 'public/data');
+    const srcDir = getSrcDir();
+    const componentsDir = `${srcDir}/components`;
+    const libDir = `${srcDir}/lib`;
+    const stylesDir = `${srcDir}/styles`;
+    const apiDir = `${srcDir}/pages/api`;
 
-export function getCombinedData(collectFilesData: boolean): Promise<{combinedData: CombinedData, type: string}>{
-  return new Promise((resolve) => {
-  const publicDir = path.join(process.cwd(), 'public/data');
-  const srcDir = getSrcDir();
-  const componentsDir = `${srcDir}/components`;
-  const libDir = `${srcDir}/lib`;
-  const stylesDir = `${srcDir}/styles`;
-  const apiDir = `${srcDir}/pages/api`;
+    const jsonFiles = getAllFiles(publicDir).filter(file =>
+      file.path.endsWith('.json')
+    );
+    const combinedData: CombinedData = {
+      data: {},
+      components: {},
+      lib: {},
+      styles: {},
+      api: {},
+      config: {},
+    };
 
-  const jsonFiles = getAllFiles(publicDir).filter(file =>
-    file.path.endsWith('.json')
-  );
-  const combinedData: CombinedData = {
-    data: {},
-    components: {},
-    lib: {},
-    styles: {},
-    api: {},
-    config: {},
-  };
-
-  collectData(publicDir, jsonFiles, combinedData.data, true);
-  let type = null;
-  if (combinedData.data['theme.json']) {
-    type = Constants.TYPES.theme;
-  } else if (combinedData.data['plugin.json']) {
+    collectData(publicDir, jsonFiles, combinedData.data, true);
+    let type = null;
+    if (combinedData.data['theme.json']) {
+      type = Constants.TYPES.theme;
+    } else if (combinedData.data['plugin.json']) {
       type = Constants.TYPES.plugin;
-    }else {
+    } else {
       console.error(
         'Project is neither a theme nor plugin. No theme.json or plugin.json file found.'
       );
       process.exit(1);
     }
-    if(!collectFilesData){
+    if (!collectFilesData) {
       return resolve({combinedData, type});
     }
-    
+
     const componentFiles = getAllFiles(componentsDir);
     collectData(componentsDir, componentFiles, combinedData.components);
 
@@ -132,11 +80,9 @@ export function getCombinedData(collectFilesData: boolean): Promise<{combinedDat
     collectData(apiDir, apiFiles, combinedData.api);
 
     collectAllConfigData(combinedData, srcDir);
-      return resolve({combinedData, type});
+    return resolve({combinedData, type});
   });
-
 }
-
 
 function collectAllConfigData(data: CombinedData, srcDir: string) {
   const files = [
@@ -226,23 +172,6 @@ function getFile(baseDir: string, file: FileObject) {
   return {relativePath, fileContent};
 }
 
-// function getFile(baseDir: string, file: any) {
-//   const relativePath = sanitizeFilePath(path.relative(baseDir, file));
-//   if (!isValidFileType(relativePath) || !isFileSizeValid(file)) {
-//     console.warn(`Skipping invalid or large file: ${relativePath}`);
-//     return {relativePath: null, fileContent: null};
-//   }
-//   let fileContent = null;
-//   try {
-//     fileContent = fs.readFileSync(file, 'utf8');
-//   } catch (error) {
-//     console.error(`Error: Unable to read directory: ${file}`);
-//     process.exit(1);
-//   }
-
-//   return {relativePath, fileContent};
-// }
-
 function sanitizeFilePath(filePath: string): string {
   return path.normalize(filePath).replace(/^(\.\.(\/|\\|$))+/, '');
 }
@@ -262,12 +191,6 @@ function isValidFileType(fileName: string): boolean {
   return allowedExtensions.includes(fileExtension);
 }
 
-// function isFileSizeValid(filePath: string): boolean {
-//   const stats = fs.statSync(filePath);
-//   const maxSize = 5 * 1024 * 1024; // 5MB limit
-//   return stats.size <= maxSize;
-// }
-
 function isFileSizeValid(file: FileObject): boolean {
   try {
     const stats = fs.statSync(file.path);
@@ -277,9 +200,7 @@ function isFileSizeValid(file: FileObject): boolean {
     const nodeError = error as NodeJsError;
     if (nodeError.code === 'ENOENT') {
       if (file.required) {
-        console.error(
-          `Error: Required file not found: ${file.path}`
-        );
+        console.error(`Error: Required file not found: ${file.path}`);
         process.exit(1);
       } else {
         return true;

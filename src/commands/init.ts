@@ -41,22 +41,12 @@ async function init(options: any) {
       installSite(dirs, cms);
     }
   }
-  // if (!type || type === Constants.TYPES.site) {
-  //   installSite(dirs, cms);
-  // } else if (
-  //   type === Constants.TYPES.theme ||
-  //   type === Constants.TYPES.plugin
-  // ) {
-  //   installThemeOrPlugin(dirs, type);
-  // } else {
-  //   console.log('Type not recognized. Use "site" or "theme".');
-  // }
 }
 
 async function installThemeOrPlugin(dirs: any, type:string, themeOrPlugin: any) {
   getDep(dirs, Constants.DEPS.next);
   if (!appMap[Constants.DEPS.next]) {
-    console.log(
+    console.error(
       'No Next.js project found. Did you remember to create it? See README.md for more details.'
     );
     process.exit(1);
@@ -75,10 +65,10 @@ async function installSite(dirs: any, cms: string) {
   getDep(dirs, Constants.DEPS.next);
   getDep(dirs, Constants.DEPS.sanity);
   if (!appMap[Constants.DEPS.next]) {
-    console.log(
+    console.error(
       'No Next.js found. Did you remember to create it? See README.md for more details.'
     );
-    return;
+    process.exit(1);
   }
   let frontendPath = appMap[Constants.DEPS.next];
   let rootDir = '/src';

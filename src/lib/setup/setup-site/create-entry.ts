@@ -24,7 +24,6 @@ export default async function createEntry(client: any, data: any, files?: Files)
         if (Array.isArray(item)) {
           const assetArray = await Promise.all(item.map(async (file) => {
             const filePath = file.path;
-            console.log('file path 1', filePath)
             const imageAsset = await client.assets.upload(
               'image',
               createReadStream(filePath)
@@ -40,7 +39,6 @@ export default async function createEntry(client: any, data: any, files?: Files)
           data[key] = assetArray;
         } else {
           const filePath = item.path;
-          console.log('file path 2', filePath)
           const imageAsset = await client.assets.upload(
             'image',
             createReadStream(filePath)

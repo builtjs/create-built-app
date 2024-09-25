@@ -38,24 +38,6 @@ export async function installFrontendSite(
     try {
       //-> Moving setup directory to frontend project
       copyRecursiveSync(`${frontendConfigPath}/setup`, `${srcPath}/setup`);
-      // const packagePath = `${frontendPath}/package.json`;
-      // let pkgData: any = fs.readFileSync(packagePath);
-      // let pkg = JSON.parse(pkgData);
-      // pkg.scripts = {
-      //   ...pkg.scripts,
-      //   ...{
-      //     setup: `node ${
-      //       rootDir !== '' ? `src/` : ''
-      //     }setup/import-data/import-data.js`,
-      //   },
-      // };
-      // fs.writeFile(
-      //   packagePath,
-      //   JSON.stringify(pkg, null, 2),
-      //   function writeJSON(err) {
-      //     if (err) return console.log(err);
-      //   }
-      // );
     } catch (error) {
       console.error(
         'An error occurred when moving the config/setup directory to the frontend project. Are you sure it exists?'
@@ -80,62 +62,6 @@ export async function installFrontendSite(
       }
     }
 
-    // try {
-    //   fs.rmSync(`${frontendPath}/next.config.mjs`);
-    // } catch (error) {
-    //   try {
-    //     fs.rmSync(`${frontendPath}/next.config.ts`);
-    //   } catch (error) {
-    //     try {
-    //       fs.rmSync(`${frontendPath}/next.config.js`);
-    //     } catch (error) {
-    //       //do nothing
-    //     }
-    //   }
-    // }
-    // try {
-    //   //-> Moving next.config.js file to frontend project
-    //   copyRecursiveSync(
-    //     `${frontendConfigPath}/next.config.js`,
-    //     `${frontendPath}/next.config.js`
-    //   );
-    // } catch (error) {
-    //   try {
-    //     //-> Moving next.config.ts file to frontend project
-    //     copyRecursiveSync(
-    //       `${frontendConfigPath}/next.config.ts`,
-    //       `${frontendPath}/next.config.ts`
-    //     );
-    //   } catch (error) {
-    //     console.error('No "next.config" file found. Skipping...');
-    //   }
-    // }
-
-    // try {
-    //   //-> Moving index.d.js file to frontend project
-    //   copyRecursiveSync(
-    //     `${frontendConfigPath}/index.d.js`,
-    //     `${frontendPath}/index.d.js`
-    //   );
-    // } catch (error) {
-    //   try {
-    //     //-> Moving next.config.ts file to frontend project
-    //     copyRecursiveSync(
-    //       `${frontendConfigPath}/index.d.ts`,
-    //       `${frontendPath}/index.d.ts`
-    //     );
-    //   } catch (error) {
-    //     console.error('No "index.d" file found. Skipping...');
-    //   }
-    // }
-
-    // try {
-    //   copyRecursiveSync(
-    //     `${frontendConfigPath}/README.site.md`,
-    //     `${frontendPath}/README.md`
-    //   );
-    // } catch (error) {}
-
     try {
       fs.rmSync(`${frontendPath}/styles`, {recursive: true, force: true});
       move(`${frontendConfigPath}/styles`, `${srcPath}/styles`);
@@ -150,87 +76,6 @@ export async function installFrontendSite(
       fs.mkdirSync(sanityPath, {recursive: true});
       move(`${frontendConfigPath}/sanity`, sanityPath);
     }
-
-    // try {
-    //   fs.rmSync(`${frontendPath}/tailwind.config.ts`);
-    // } catch (error) {
-    //   try {
-    //     fs.rmSync(`${frontendPath}/tailwind.config.js`);
-    //   } catch (error) {
-    //     //do nothing
-    //   }
-    // }
-    //    let tailwindConfigPath = ``;
-    // let tailwindConfigData: any = null;
-    // try {
-    //   //-> Moving tailwind.config.js to frontend project
-
-    //   copyRecursiveSync(
-    //     `${frontendConfigPath}/tailwind.config.js`,
-    //     `${frontendPath}/tailwind.config.js`
-    //   );
-    //   tailwindConfigPath = `${frontendPath}/tailwind.config.js`;
-    // } catch (error) {
-    //   try {
-    //     //-> Moving tailwind.config.ts to frontend project
-    //     copyRecursiveSync(
-    //       `${frontendConfigPath}/tailwind.config.ts`,
-    //       `${frontendPath}/tailwind.config.ts`
-    //     );
-    //     tailwindConfigPath = `${frontendPath}/tailwind.config.js`;
-    //   } catch (error) {}
-    // }
-    // try {
-    //   let tailwindConfigData = await fs.readFileSync(
-    //     tailwindConfigPath,
-    //     'utf-8'
-    //   );
-    //   tailwindConfigData = tailwindConfigData.replace(/src\//g, '');
-    //   await fs.writeFileSync(tailwindConfigPath, tailwindConfigData);
-    // } catch (error) {
-    //   console.error('Error processing the Tailwind config file:', error);
-    // }
-
-    // try {
-    //   fs.rmSync(`${frontendPath}/postcss.config.mjs`);
-    // } catch (error) {
-    //   try {
-    //     fs.rmSync(`${frontendPath}/postcss.config.ts`);
-    //   } catch (error) {
-    //     try {
-    //       fs.rmSync(`${frontendPath}/postcss.config.js`);
-    //     } catch (error) {
-    //       //do nothing
-    //     }
-    //   }
-    // }
-
-    // try {
-    //   //-> Moving postcss.config.js to frontend project
-    //   copyRecursiveSync(
-    //     `${frontendConfigPath}/postcss.config.js`,
-    //     `${frontendPath}/postcss.config.js`
-    //   );
-    // } catch (error) {
-    //   try {
-    //     //-> Moving postcss.config.ts to frontend project
-    //     copyRecursiveSync(
-    //       `${frontendConfigPath}/postcss.config.ts`,
-    //       `${frontendPath}/postcss.config.ts`
-    //     );
-    //   } catch (error) {}
-    // }
-
-    //move components
-
-    // fs.rmSync(`${srcPath}/components`, {recursive: true, force: true});
-    // move(`${frontendConfigPath}/components`, `${srcPath}/components`);
-
-    // move lib
-
-    // move(`${frontendConfigPath}/lib`, `${srcPath}/lib`);
-
-    // move pages
 
     await moveCommon(frontendConfigPath, frontendPath);
 
@@ -265,8 +110,6 @@ export async function installFrontendSite(
 }
 
 function moveCommon(src: string, dest: string) {
-  //site: src: frontendConfigPath, dest: frontendPath
-  //themeOrPlugin: src: Constants.CONFIG_PREFIX, dest: frontendPath
   return new Promise<void>(async resolve => {
     try {
       //-> Moving index.d.js file to frontend project
@@ -470,36 +313,12 @@ export async function installFrontendThemeOrPlugin(
     typeQuery = type;
   }
 
-  // let themeOrPlugin = await getThemeOrPlugin(typeQuery);
-  // if (!themeOrPlugin) {
-  //   if (type) {
-  //     console.log(`No ${type}.json file found.`);
-  //     process.exit(1);
-  //   } else {
-  //     typeQuery = 'plugin';
-  //     themeOrPlugin = await getThemeOrPlugin(typeQuery);
-  //   }
-  // } else {
-  //   if (!type) {
-  //     type = typeQuery;
-  //   }
-  // }
   if (!themeOrPlugin) {
     console.error('Error: It looks like this not a theme or plugin.');
     process.exit(1);
   }
   console.log(`Installing ${type}...`);
-  //  if(type === 'theme'){
-  //   const theme = await getThemeOrPlugin('theme',true);
-  //   if (!theme) {
-  //     console.error(
-  //       `Error: Project needs to include a public/data/theme.json file.`
-  //     );
-  //     process.exit(1);
-  //   }
-  // console.log('Installing plugins...')
   let namespace;
-  // if (type === 'plugin') {
   try {
     const appData: any = fs.readFileSync(
       `${Constants.CONFIG_PREFIX}/${type}.json`
@@ -509,8 +328,6 @@ export async function installFrontendThemeOrPlugin(
       namespace = app.namespace;
     }
   } catch (error) {}
-
-  console.log({frontendPath})
   await moveCommon(Constants.CONFIG_PREFIX, frontendPath);
   movePages(srcPath, type, namespace);
   fs.rmSync(`${srcPath}/api`, {recursive: true, force: true});
@@ -520,146 +337,6 @@ export async function installFrontendThemeOrPlugin(
 
   fs.rmSync(`${frontendPath}/public`, {recursive: true, force: true});
   move(Constants.THEME_PUBLIC_DIR, `${frontendPath}/public`);
-  // await update(themeOrPlugin, type, apiKey, frontendPath, true);
-  // }
-
-
-  // }
-
-  // try {
-  //   //-> Moving setup directory to project
-  //   copyRecursiveSync(`${Constants.CONFIG_PREFIX}/setup`, `${srcPath}/setup`);
-  //   //update scripts
-  //   const packagePath = `${frontendPath}/package.json`;
-  //   let pkgData: any = fs.readFileSync(packagePath);
-  //   let pkg = JSON.parse(pkgData);
-  //   pkg.scripts = {
-  //     ...pkg.scripts,
-  //     ...{
-  //       setup: `node ${rootDir !== '' ? `src/` : ''}setup/import-data.js`,
-  //     },
-  //   };
-  //   fs.writeFile(
-  //     packagePath,
-  //     JSON.stringify(pkg, null, 2),
-  //     function writeJSON(err) {
-  //       if (err) return console.log(err);
-  //     }
-  //   );
-  // } catch (error) {
-  //   console.error(
-  //     'An error occurred when moving the config/setup directory to the frontend project. Are you sure it exists?'
-  //   );
-  // }
-
-  // try {
-  //   //-> Moving index.d.js file to frontend project
-  //   copyRecursiveSync(
-  //     `${Constants.CONFIG_PREFIX}/index.d.js`,
-  //     `${frontendPath}/index.d.js`
-  //   );
-  // } catch (error) {
-  //   try {
-  //     //-> Moving index.d.ts file to frontend project
-  //     copyRecursiveSync(
-  //       `${Constants.CONFIG_PREFIX}/index.d.ts`,
-  //       `${frontendPath}/index.d.ts`
-  //     );
-  //   } catch (error) {
-  //     console.error('No "index.d" file found. Skipping...');
-  //   }
-  // }
-
-  // try {
-  //   fs.rmSync(`${frontendPath}/tailwind.config.ts`);
-  // } catch (error) {
-  //   try {
-  //     fs.rmSync(`${frontendPath}/tailwind.config.js`);
-  //   } catch (error) {
-  //     //do nothing
-  //   }
-  // }
-
-  // try {
-  //   //-> Moving tailwind.config.js to frontend project
-  //   copyRecursiveSync(
-  //     `${Constants.CONFIG_PREFIX}/tailwind.config.js`,
-  //     `${frontendPath}/tailwind.config.js`
-  //   );
-  // } catch (error) {
-  //   try {
-  //     //-> Moving tailwind.config.ts to frontend project
-  //     copyRecursiveSync(
-  //       `${Constants.CONFIG_PREFIX}/tailwind.config.ts`,
-  //       `${frontendPath}/tailwind.config.ts`
-  //     );
-  //   } catch (error) {}
-  // }
-
-  // try {
-  //   fs.rmSync(`${frontendPath}/postcss.config.mjs`);
-  // } catch (error) {
-  //   try {
-  //     fs.rmSync(`${frontendPath}/postcss.config.ts`);
-  //   } catch (error) {
-  //     try {
-  //       fs.rmSync(`${frontendPath}/postcss.config.js`);
-  //     } catch (error) {
-  //       //do nothing
-  //     }
-  //   }
-  // }
-
-  // try {
-  //   //-> Moving postcss.config.js to frontend project
-  //   copyRecursiveSync(
-  //     `${Constants.CONFIG_PREFIX}/postcss.config.js`,
-  //     `${frontendPath}/postcss.config.js`
-  //   );
-  // } catch (error) {
-  //   try {
-  //     //-> Moving postcss.config.ts to frontend project
-  //     copyRecursiveSync(
-  //       `${Constants.CONFIG_PREFIX}/postcss.config.ts`,
-  //       `${frontendPath}/postcss.config.ts`
-  //     );
-  //   } catch (error) {}
-  // }
-
-  // console.log(`${Constants.CONFIG_PREFIX}/builtjs-utils.js`)
-  // console.log(`${srcPath}/builtjs-utils.ts`)
-  // try {
-  //   //-> Moving builtjs-utilsjs file to frontend project
-  //   copyRecursiveSync(
-  //     `${Constants.CONFIG_PREFIX}/builtjs-utils.js`,
-  //     `${srcPath}/builtjs-utils.js`
-  //   );
-  // } catch (error) {
-  //   try {
-  //     //-> Moving builtjs-utils.ts file to frontend project
-  //     copyRecursiveSync(
-  //       `${Constants.CONFIG_PREFIX}/builtjs-utils.ts`,
-  //       `${srcPath}/builtjs-utils.ts`
-  //     );
-  //   } catch (error) {
-  //     console.error('No "builtjs-utils" file found. Skipping...');
-  //   }
-  // }
-
-  // installDeps(frontendPath);
-  // move(Constants.THEME_COMPONENTS_DIR, `${srcPath}/components`);
-  // move(Constants.THEME_LIB_DIR, `${srcPath}/lib`);
-  // try {
-  //   fs.rmSync(
-  //     `${srcPath}/styles/${type === 'plugin' ? 'plugins' : ''}${
-  //       namespace ? namespace + '/' : ''
-  //     }Home.module.css`
-  //   );
-  // } catch (error) {
-  //   //do nothing
-  // }
-
-
 
   console.log('Done!');
   // Finished installing
@@ -667,9 +344,7 @@ export async function installFrontendThemeOrPlugin(
 
 function move(from: string, to: string) {
   try {
-    console.log(`Moving from ${from} to ${to}...`);
     copyRecursiveSync(from, to);
-    console.log(`Move from ${from} to ${to} completed.`);
     return true;
   } catch (error) {
     console.error(`'${from}' not found. Skipping...`);
@@ -690,24 +365,6 @@ async function movePages(srcPath: string, type: string, namespace: string) {
     appData = appData.replace(`@/styles/globals.css`, cssString);
     await fs.promises.writeFile(appPath, appData);
   }
-}
-
-function installDeps(frontendPath: string) {
-  let configData: any = fs.readFileSync(
-    `${Constants.CONFIG_PREFIX}/config.json`
-  );
-  let config = JSON.parse(configData).config;
-  const packagePath = `${frontendPath}/package.json`;
-  let pkgData: any = fs.readFileSync(packagePath);
-  const pkg = JSON.parse(pkgData);
-  pkg.dependencies = {...pkg.dependencies, ...config.dependencies};
-  fs.writeFile(
-    packagePath,
-    JSON.stringify(pkg, null, 2),
-    function writeJSON(err) {
-      if (err) return console.log(err);
-    }
-  );
 }
 
 function getInvalidSiteError(cms: string) {

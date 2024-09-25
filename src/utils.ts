@@ -41,17 +41,3 @@ export function getSrcDir(): string {
   return directory;
 }
 
-// export function getSrcDir(pathSegments?: string[]): string {
-//   const dirs = [
-//     pathSegments ? path.join(process.cwd(), 'src', ...pathSegments) : path.join(process.cwd(), 'src'),
-//     pathSegments ? path.join(process.cwd(), ...pathSegments) : process.cwd()
-//   ];
-//   let directory: string = '';
-//   for (const dir of dirs) {
-//     if (fs.existsSync(dir)) {
-//       directory = dir;
-//       break;
-//     }
-//   }
-//   return directory;
-// }

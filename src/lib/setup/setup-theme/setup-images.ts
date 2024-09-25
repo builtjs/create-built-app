@@ -75,8 +75,6 @@ function findImageFieldsInSections(sections: {[key: string]: Section}): {
   const result: {[key: string]: {fields: string[]; namespace?: string}} = {};
   for (const sectionName in sections) {
     const fields = sections[sectionName].fields;
-    // const namespace = sections[sectionName].namespace;
-    // console.log('sections[sectionName]', sections[sectionName]);
 
     if (fields) {
       const imageFields = Object.keys(fields).filter(
@@ -84,10 +82,6 @@ function findImageFieldsInSections(sections: {[key: string]: Section}): {
       );
       if (imageFields.length > 0) {
         result[sectionName] = {fields: imageFields};
-        // if (namespace) {
-        //   result[sectionName].namespace = namespace;
-        // }
-        // result[sectionName] = imageFields;
       }
     }
   }
@@ -111,7 +105,6 @@ function findImageFieldsInElements(elements: Element[]): {
       }
     }
   }
-  console.log('element result:', result)
   return result;
 }
 
@@ -147,7 +140,6 @@ function getImageDataFromBuilt(
     [key: string]: {fields: string[]};
   }
 ): {path: string; url: string}[] {
-  console.log('getImageDataFromBuilt...', Object.keys(builtData).length)
   const images: {path: string; url: string}[] = [];
   const addedPaths = new Set<string>(); // Set to track added paths
 
@@ -169,89 +161,54 @@ function getImageDataFromBuilt(
 
   // Get section images
   builtData.sections.forEach(section => {
-
-    if(section.data){
+    if (section.data) {
       const sectionName = section.name;
-      console.log(
-        'sectionSchemaImageFields[sectionName]',
-        sectionSchemaImageFields[sectionName]
-      );
 
-    if (sectionSchemaImageFields[sectionName]) {
-      sectionSchemaImageFields[sectionName].fields.forEach(field => {
-        const image = section.data[field];
-        if (image && image.path && image.url) {
-          addImage(image);
-        }
-      });
-    }
-    console.log('...1', section)
-    console.log('...1->', section.data)
-    Object.keys(section.data).map((fieldOrArray: any) => {
-      console.log('...2', fieldOrArray)
-      if (Array.isArray(section.data[fieldOrArray])) {
-        console.log('...3')
-        let singularName = pluralize.singular(fieldOrArray);
-        section.data[fieldOrArray].forEach((element: any) => {
-          console.log('...4', element)
-          for (const key in element) {
-            console.log('...5 key', key)
-            console.log('...5 fields', elementSchemaImageFields)
-            if (elementSchemaImageFields[singularName] && elementSchemaImageFields[singularName].fields && elementSchemaImageFields[singularName].fields.includes(key)) {
-              console.log('...6', element[key])
-              const image = element[key];
+      if (sectionSchemaImageFields[sectionName]) {
+        sectionSchemaImageFields[sectionName].fields.forEach(field => {
+          const image = section.data[field];
+          if (image && image.path && image.url) {
+            addImage(image);
+          }
+        });
+      }
+      Object.keys(section.data).map((fieldOrArray: any) => {
+        if (Array.isArray(section.data[fieldOrArray])) {
+          let singularName = pluralize.singular(fieldOrArray);
+          section.data[fieldOrArray].forEach((element: any) => {
+            for (const key in element) {
+              if (
+                elementSchemaImageFields[singularName] &&
+                elementSchemaImageFields[singularName].fields &&
+                elementSchemaImageFields[singularName].fields.includes(key)
+              ) {
+                const image = element[key];
+                if (image && image.path && image.url) {
+                  addImage(image);
+                }
+              }
+            }
+          });
+        } else {
+          for (const key in fieldOrArray) {
+            if (sectionSchemaImageFields[key]) {
+              const image = fieldOrArray[key];
               if (image && image.path && image.url) {
-                console.log('...7')
                 addImage(image);
               }
             }
           }
-        });
-      }else{
-        for (const key in fieldOrArray) {
-          if (sectionSchemaImageFields[key]) {
-            const image = fieldOrArray[key];
-            // const image = el[fieldName];
-            if (image && image.path && image.url) {
-              addImage(image);
-            }
-          }
         }
-      }
-      
-    });
-  }
-    // if (elementSchemaImageFields[sectionName]) {
-    //   if (Array.isArray(elementSchemaImageFields[sectionName])) {
-    //     elementSchemaImageFields[sectionName].forEach((element: any) => {
-    //       element.fields.forEach((field: Field) => {
-    //         const image = section.data[field];
-    //         if (image && image.path && image.url) {
-    //           addImage(image);
-    //         }
-    //       });
-    //     });
-    //   } else {
-    //     elementSchemaImageFields[sectionName].fields.forEach(field => {
-    //       const image = section.data[field];
-    //       if (image && image.path && image.url) {
-    //         addImage(image);
-    //       }
-    //     });
-    //   }
-    // }
+      });
+    }
   });
-console.log('contentTypeSchemaImageFields',contentTypeSchemaImageFields)
   // Get collection images
   builtData.contentTypes.forEach(contentType => {
     const contentTypeName = contentType.name;
-    console.log('contentTypeName:', contentTypeName);
     if (contentTypeSchemaImageFields[contentTypeName]) {
       contentTypeSchemaImageFields[contentTypeName].fields.forEach(field => {
         const collectionName = pluralize(contentTypeName);
-        console.log('collectionName:', collectionName);
         const dataArray = builtData.collections[collectionName];
-        console.log('dataArray:', dataArray);
         // Ensure `dataArray` is an array and iterate over it
         if (Array.isArray(dataArray)) {
           dataArray.forEach(item => {
@@ -269,79 +226,13 @@ console.log('contentTypeSchemaImageFields',contentTypeSchemaImageFields)
   return images;
 }
 
-// Function to download and save images
-// async function downloadAndSaveImages(
-//   images: {path: string, namespace: string}[],
-//   repoConfig: any
-// ) {
-//   // const provider = repoConfig.provider;
-//   for (const image of images) {
-//     // let namespace = image.namespace;
-//     // const [provider, owner, repo] = namespace.split('_');
-//     // let repoConfig = {
-//     //   owner: owner,
-//     //   repo: repo,
-//     //   provider: provider,
-//     // };
-//     const directoryPath = image.path.substring(0, image.path.lastIndexOf('/'));
-//     const imagePath = path.dirname(directoryPath);
-//     if (!(await fsPromises.stat(imagePath).catch(() => false))) {
-//       await fsPromises.mkdir(imagePath, {recursive: true});
-//     }
-//     let imageUrl = '';
-//     // let repoName = `${repoConfig.owner}/${repoConfig.repo}`;
-//     // if (provider === 'gh') {
-//     //   imageUrl = `https://raw.githubusercontent.com/${repoName}/main/${image.path}`;
-//     // } else if (provider === 'gl') {
-//     //   imageUrl = `https://gitlab.com/${repoName}/-/raw/main/${image.path}`;
-//     // } else if (provider === 'bb') {
-//     //   imageUrl = `https://bitbucket.org/${repoName}/raw/main/${image.path}`;
-//     // } else {
-//     //   console.log('Namespace does not start with a recognised prefix.');
-//     // }
-
-//     await downloadImage(imageUrl, image.path);
-//   }
-// }
 async function downloadAndSaveImages(
   images: {path: string; url: string}[],
   to: string
 ) {
   const publicPath = `./public`;
-  // const uploadsPath = path.resolve(__dirname, uploadsDirPath);
   const uploadsPath = path.resolve(to, publicPath);
-  // const imageUrl = file.url || `${file.path}/${file.name}.${file.ext}`;
-  // const provider = repoConfig.provider;
   for (const image of images) {
-    // let namespace = image.namespace;
-    // const [provider, owner, repo] = namespace.split('_');
-    // let repoConfig = {
-    //   owner: owner,
-    //   repo: repo,
-    //   provider: provider,
-    // };
-
-    // console.log('image...:', image)
-    // const directoryPath = image.path.substring(0, image.path.lastIndexOf('/'));
-    // console.log({directoryPath})
-    // const imagePath = path.dirname(directoryPath);
-    // console.log({imagePath})
-    // if (!(await fsPromises.stat(imagePath).catch(() => false))) {
-    //   await fsPromises.mkdir(imagePath, {recursive: true});
-    // }
-
-    // let imageUrl = '';
-    // let repoName = `${repoConfig.owner}/${repoConfig.repo}`;
-    // if (provider === 'gh') {
-    //   imageUrl = `https://raw.githubusercontent.com/${repoName}/main/${image.path}`;
-    // } else if (provider === 'gl') {
-    //   imageUrl = `https://gitlab.com/${repoName}/-/raw/main/${image.path}`;
-    // } else if (provider === 'bb') {
-    //   imageUrl = `https://bitbucket.org/${repoName}/raw/main/${image.path}`;
-    // } else {
-    //   console.log('Namespace does not start with a recognised prefix.');
-    // }
-
     await downloadImage(image, uploadsPath);
   }
 }
@@ -353,24 +244,13 @@ export async function updateImagesForThemeOrPlugin(
   type: string,
   isConfig?: boolean
 ) {
-  console.log('updatePluginImagesForTheme...isConfig:', isConfig);
-  console.log({frontendPath});
-
   await updateImages(builtData, frontendPath);
   if (type === 'theme' && themeOrPlugin.plugins) {
     for (const pluginNamespace of themeOrPlugin.plugins) {
-      console.log({pluginNamespace});
       await updateImages(builtData, frontendPath, pluginNamespace, true);
     }
   }
 }
-
-// export async function updateThemeOrPluginImages(themeNamespace: string) {
-//   const projectRoot = process.cwd();
-//   const builtDataPath = path.join(projectRoot, `public/data/_built/data.json`);
-//   const builtData = (await readJsonFile(builtDataPath)) as BuiltData;
-//   await updateImages(builtData, projectRoot, themeNamespace);
-// }
 
 export async function updateImages(
   builtData: BuiltData,
@@ -379,13 +259,6 @@ export async function updateImages(
   isPluginForTheme?: boolean
 ) {
   let pluginPath = '';
-  // const [provider, owner, repo] = namespace.split('_');
-  // let repoConfig = {
-  //   owner: owner,
-  //   repo: repo,
-  //   provider: provider,
-  // };
-  console.log({isPluginForTheme});
   if (isPluginForTheme) {
     pluginPath = `/plugins/${namespace}`;
   }
@@ -420,9 +293,6 @@ export async function updateImages(
   const sectionSchemaImageFields = findImageFieldsInSections(
     sectionsSchema.sections
   );
-  // const contentTypeSchemaImageFields = findImageFieldsInContentTypes(
-  //   builtData.contentTypes
-  // );
   const contentTypeSchemaImageFields = findImageFieldsInContentTypes(
     contentTypesSchema.contentTypes
   );
@@ -438,9 +308,7 @@ export async function updateImages(
     contentTypeSchemaImageFields,
     elementSchemaImageFields
   );
-  // console.log({images});
 
   // Download and save images
   await downloadAndSaveImages(images, projectRoot);
-  console.log('Done saving images for isPluginForTheme: ' + isPluginForTheme);
 }
