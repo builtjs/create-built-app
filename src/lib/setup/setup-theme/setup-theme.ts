@@ -1,16 +1,12 @@
 import axios from 'axios';
 import prettier from 'prettier';
 import {
-  getApiKey,
   promptForApiKey,
-  validateApiKey,
-  saveApiKeyToConfig,
 } from '../../../lib/apiKeyUtils';
 import {Constants} from '../../../constants';
 import {promises as fsp, open as fsOpen} from 'fs';
 import fs from 'fs';
 import * as path from 'path';
-import {getSrcDir} from '../../../utils';
 import * as zlib from 'zlib';
 import * as _ from 'lodash';
 import {

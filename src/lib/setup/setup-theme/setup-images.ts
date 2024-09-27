@@ -1,7 +1,5 @@
 import {promises as fsPromises} from 'fs';
-import * as fs from 'fs';
 import path from 'path';
-import https from 'https';
 import pluralize from 'pluralize';
 import {downloadImage} from '../setup-site/file-utils';
 
