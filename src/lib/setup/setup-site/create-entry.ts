@@ -8,12 +8,6 @@ interface Files {
   [key: string]: FileData | FileData[];
 }
 
-interface Data {
-  _id: string;
-  _type: string;
-  [key: string]: any; // Adjust as needed for other properties
-}
-
 /**
  * Create an entry and attach files if there are any
  */
@@ -62,7 +56,7 @@ export default async function createEntry(client: any, data: any, files?: Files)
         _type,
         ...rest,
       });
-      console.log('Document created or replaced:', createdOrUpdatedDoc._id);
+      console.log('Entry created:', createdOrUpdatedDoc._id);
     } catch (error) {
       console.error('Error creating or replacing document:', error);
     }

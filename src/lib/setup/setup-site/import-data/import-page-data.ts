@@ -43,14 +43,14 @@ export default async function importPageData(client: any, data: Data | null): Pr
       continue;
     }
 
-    const files: Files = {};
     for (let i = 0; i < data.pages.length; i++) {
       const pageData = data.pages[i];
-      for (let i = 0; i < pageData.data.sections.length; i++) {
+      for (let j = 0; j < pageData.data.sections.length; j++) {
+        const section = pageData.data.sections[j];
         const pageFiles = await fileUtils.getFilesData(pageData.files?.page);
         const elementFiles = await fileUtils.getFilesData(pageData.files?.elements);
         const files = {...pageFiles, ...elementFiles};
-        await createPage(client, pageData.data, files);
+        await createPage(section, client, pageData.data, files);
       }
     }
   }

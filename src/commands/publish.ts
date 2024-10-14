@@ -235,7 +235,7 @@ export async function sendRequest(type: string, data: Buffer): Promise<void> {
 
     try {
       const response = await axios.post(
-        `${Constants.API_URL}/v${Constants.CURRENT_API_VERSION}/${type}s/publish`,
+        `${Constants.API_URL }/v${Constants.CURRENT_API_VERSION}/${type}s/publish`,
         data,
         {
           headers: {

@@ -76,7 +76,7 @@ export default async function createLayout(client: any, layout: LayoutData, file
     }
     for (const section of layout.sections) {
       try {
-        const createdOrUpdatedDoc = await client.createOrReplace(section);
+        await client.createOrReplace(section);
       } catch (error) {
         console.error('Error creating or replacing document:', error);
       }

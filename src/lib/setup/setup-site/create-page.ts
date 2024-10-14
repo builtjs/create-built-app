@@ -4,10 +4,6 @@ interface FileData {
   path: string;
 }
 
-interface Files {
-  [key: string]: FileData;
-}
-
 interface Section {
   [key: string]: any; // Adjust this type based on the actual structure of 'section'
 }
@@ -22,6 +18,7 @@ interface PageData {
  * Create a page and attach files if there are any
  */
 export default async function createPage(
+  section:any,
   client: any,
   data: PageData,
 files?: Record<string, FileData | FileData[]>
@@ -39,8 +36,8 @@ files?: Record<string, FileData | FileData[]>
           // Import image asset
           const imageAsset = await client.assets.upload('image', createReadStream(filePath));
       
-          let section = data.sections[parseInt(contentSectionIndex)];
-          if (section) {
+          let sectionWithFile = data.sections[parseInt(contentSectionIndex)];
+          if (sectionWithFile) {
             const asset = {
               "_type": "image",
               "asset": {
@@ -48,7 +45,7 @@ files?: Record<string, FileData | FileData[]>
                 "_type": "reference"
               }
             };
-            section[name] = asset;
+            sectionWithFile[name] = asset;
           }
         }
       }
@@ -61,7 +58,7 @@ files?: Record<string, FileData | FileData[]>
         _type,
         ...rest,
       });
-      console.log('Document created or replaced:', createdOrUpdatedDoc._id);
+      console.log(`Created ${createdOrUpdatedDoc._id} page section: ${section._id}` );
     } catch (error) {
       console.error('Error creating or replacing document:', error);
     }
