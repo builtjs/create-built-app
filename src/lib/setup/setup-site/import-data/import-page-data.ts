@@ -1,6 +1,6 @@
-import { promises as fs } from 'fs';
+import {promises as fs} from 'fs';
 import * as path from 'path';
-import { createReadStream } from 'fs';
+import {createReadStream} from 'fs';
 import * as fileUtils from '../file-utils';
 import createPage from '../create-page';
 
@@ -34,24 +34,30 @@ interface Files {
 }
 
 // Main function to import page data
-export default async function importPageData(client: any, data: Data | null): Promise<void> {
+export default async function importPageData(
+  client: any,
+  data: Data | null
+): Promise<void> {
   if (!data?.pages) {
     return;
   }
-  for (const { data: pageData, files: pageFiles } of data.pages) {
-    if (!pageData.sections) {
+
+  for (let i = 0; i < data.pages.length; i++) {
+    const pageData = data.pages[i];
+    if (!pageData) {
       continue;
     }
-
-    for (let i = 0; i < data.pages.length; i++) {
-      const pageData = data.pages[i];
-      for (let j = 0; j < pageData.data.sections.length; j++) {
-        const section = pageData.data.sections[j];
-        const pageFiles = await fileUtils.getFilesData(pageData.files?.page);
-        const elementFiles = await fileUtils.getFilesData(pageData.files?.elements);
-        const files = {...pageFiles, ...elementFiles};
-        await createPage(section, client, pageData.data, files);
+    for (let j = 0; j < pageData.data.sections.length; j++) {
+      const section = pageData.data.sections[j];
+      if (!section) {
+        continue;
       }
+      const pageFiles = await fileUtils.getFilesData(pageData.files?.page);
+      const elementFiles = await fileUtils.getFilesData(
+        pageData.files?.elements
+      );
+      const files = {...pageFiles, ...elementFiles};
+      await createPage(section, client, pageData.data, files);
     }
   }
 }
