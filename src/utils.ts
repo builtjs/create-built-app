@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+
 /**
  * Recursively copy into new destination.
  * @param {string} src  The path to the thing to copy.

@@ -4,36 +4,53 @@ The official command line tool for creating Built.JS themes, plugins and sites
 
 
 ## Usage
-```
-npx create-built-app init
-```
-For building themes or plugins, use:
-```
-npx create-built-app init --type=theme
-```
-or
-```
-npx create-built-app init --type=plugin
-```
-
-If you want to install it globally:
+Publishing to Built Studio:
 ```bash
-npm install create-built-app -g
-```
-Then you can do:
-```
-built init
+npx create-built-app publish
 ```
 
-## Development
+Updating theme (if adding or removing plugins in theme.json):
+```bash
+npx create-built-app update
 ```
-npm run prepare
+
+
+## Using the Library Locally
+Follow the steps below:
+
+### Steps
+
+1. **Create a global symlink to your library:**
+Run the following command in your library folder:
+```bash
+npm link
 ```
-### Install theme
+This will create a global symlink to your library.
+
+2. **Make Changes:** 
+Edit the TypeScript files in your local library.
+
+3. **Watch and Compile the Changes:** 
+Run this to continuously watch for changes to the TypeScript files and recompile:
+```bash
+npm run watch
 ```
-node build/src/index.js init --type theme
+
+4. **Navigate to the project where you want to use the library:**
+```bash
+cd /path/to/your/local/project
 ```
-### Install site
+Then link the global symlink to your project:
+```bash
+npm link create-built-app
 ```
-node build/src/index.js init --type site
+
+5. **Run your command:**
+```bash
+npx create-built-app publish
+```
+
+To unlink:
+```bash
+npm unlink -g create-built-app
 ```
