@@ -13,6 +13,7 @@ import * as zlib from 'zlib';
 import {CombinedData} from '../interfaces';
 
 async function publish() {
+  console.log('Publishing...');
   const {combinedData, type} = await getCombinedData(true);
   // Compress combinedData before sending
   const compressedData = compressData(combinedData);

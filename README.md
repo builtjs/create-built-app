@@ -45,6 +45,8 @@ Then link the global symlink to your project:
 npm link create-built-app
 ```
 
+NOTE: For each update you make, run this command again.
+
 5. **Run your command:**
 ```bash
 npx create-built-app publish
@@ -54,20 +56,3 @@ To unlink:
 ```bash
 npm unlink -g create-built-app
 ```
-Or:
-```
-npm root -g
-```
-This will give you, e.g. cd /opt/homebrew/bin
-Then:
-```
-cd /opt/homebrew/bin
-rm -f create-built-app
-cd /opt/homebrew/lib/node_modules
-rm -rf create-built-app
-```
-To make sure the symlink has been removed, run:
-```
-which create-built-app
-```
-It should return `create-built-app not found`.
