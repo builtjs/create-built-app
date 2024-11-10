@@ -1,8 +1,5 @@
 export namespace Constants {
-  const LOCAL_API_URL = 'http://localhost';
-  const REMOTE_API_URL = 'https://api.builtjs.com';
-
-  export const API_URL = process.env.NODE_ENV === 'production' ? REMOTE_API_URL : LOCAL_API_URL;
+  export const API_URL = 'https://api.builtjs.com';
   export const CURRENT_API_VERSION = '1.2';
   export const defaults = {
     LANGUAGE: 'typescript',
