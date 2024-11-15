@@ -528,9 +528,9 @@ async function setupPlugins(
         if (error.response) {
           if (error.response.data.message) {
             let msg = error.response.data.message;
-            if (error.response.data.docsUrl) {
-              msg += `. Find out more at https://docs.builtjs.com/${error.response.data.docsUrl}.`;
-            }
+            // if (error.response.data.docsUrl) {
+            //   msg += `. Find out more at https://docs.builtjs.com/${error.response.data.docsUrl}.`;
+            // }
             console.error(msg);
             if (error.response.data.message === 'Invalid API key') {
               apiKey = await promptForApiKey();
