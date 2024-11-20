@@ -2,15 +2,11 @@ import {promises as fsPromises} from 'fs';
 import path from 'path';
 import pluralize from 'pluralize';
 import {downloadImage} from '../setup-site/file-utils';
+import {BuiltData, ContentType, Field} from '../../../interfaces';
 
 interface ThemeOrPlugin {
   language?: string;
   plugins?: string[];
-}
-
-interface Field {
-  type: string;
-  default?: string;
 }
 
 interface Section {
@@ -24,31 +20,11 @@ interface Element {
   fields: {[key: string]: Field};
 }
 
-interface ContentType {
-  name: string;
-  fields: {[key: string]: Field};
-}
-
 interface Schema {
   global: {fields: {[key: string]: Field}};
   sections: {[key: string]: Section};
   contentTypes: ContentType[];
   elements: Element[];
-}
-
-interface BuiltSection {
-  name: string;
-  title: string;
-  data: {[key: string]: any};
-}
-
-interface BuiltData {
-  sections: BuiltSection[];
-  contentTypes: ContentType[];
-  collections: {[key: string]: any};
-  global: {[key: string]: any};
-  theme?: {[key: string]: any};
-  plugin?: {[key: string]: any};
 }
 
 // Utility function to read JSON files
@@ -127,7 +103,7 @@ function findImageFieldsInContentTypes(contentTypes: ContentType[]): {
 
 function getImageDataFromBuilt(
   builtData: BuiltData,
-  globalSchemaImageFields: string[],
+  globalSchemaImageFields: string[] | null,
   sectionSchemaImageFields: {
     [key: string]: {fields: string[]; namespace?: string};
   },
@@ -149,13 +125,15 @@ function getImageDataFromBuilt(
     }
   }
 
-  // Get global images
-  globalSchemaImageFields.forEach(field => {
-    const image = builtData.global[field];
-    if (image && image.path && image.url) {
-      addImage(image);
-    }
-  });
+  if (builtData.global && globalSchemaImageFields) {
+    const globalData = builtData.global;
+    globalSchemaImageFields.forEach(field => {
+      const image = globalData[field];
+      if (image && image.path && image.url) {
+        addImage(image);
+      }
+    });
+  }
 
   // Get section images
   builtData.sections.forEach(section => {
@@ -261,10 +239,6 @@ export async function updateImages(
     pluginPath = `/plugins/${namespace}`;
   }
   // Define paths to the schema and data files
-  const globalSchemaPath = path.join(
-    projectRoot,
-    `public/data${pluginPath}/schemas/global.json`
-  );
   const sectionsSchemaPath = path.join(
     projectRoot,
     `public/data${pluginPath}/schemas/sections.json`
@@ -278,16 +252,25 @@ export async function updateImages(
     `public/data${pluginPath}/schemas/elements.json`
   );
 
-  // Read schemas and built data
-  const globalSchema = (await readJsonFile(globalSchemaPath)) as Schema;
+  let globalSchema = null;
+  try {
+    const globalSchemaPath = path.join(
+      projectRoot,
+      `public/data${pluginPath}/schemas/global.json`
+    );
+    globalSchema = (await readJsonFile(globalSchemaPath)) as Schema;
+  } catch (error) {}
   const sectionsSchema = (await readJsonFile(sectionsSchemaPath)) as Schema;
   const contentTypesSchema = (await readJsonFile(
     contentTypesSchemaPath
   )) as Schema;
   const elementsSchema = (await readJsonFile(elementsSchemaPath)) as Schema;
-
+  let globalSchemaImageFields = null;
   // Find image fields
-  const globalSchemaImageFields = findImageFieldsInGlobal(globalSchema.global);
+  if (globalSchema && globalSchema.global) {
+    globalSchemaImageFields = findImageFieldsInGlobal(globalSchema.global);
+  }
+
   const sectionSchemaImageFields = findImageFieldsInSections(
     sectionsSchema.sections
   );

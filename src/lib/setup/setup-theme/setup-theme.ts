@@ -1,24 +1,22 @@
 import axios from 'axios';
 import prettier from 'prettier';
-import {
-  promptForApiKey,
-} from '../../../lib/apiKeyUtils';
+import {promptForApiKey} from '../../../lib/apiKeyUtils';
 import {Constants} from '../../../constants';
 import {promises as fsp, open as fsOpen} from 'fs';
 import fs from 'fs';
 import * as path from 'path';
 import * as zlib from 'zlib';
 import * as _ from 'lodash';
-import {
-  mergeData,
-  Data,
-  Page,
-  Section,
-} from '../../../lib/setup/setup-theme/merge-data';
+import {mergeData} from '../../../lib/setup/setup-theme/merge-data';
 import {updateImagesForThemeOrPlugin} from '../../../lib/setup/setup-theme/setup-images';
 import {setupSiteData} from '../../../lib/setup/setup-site/import-data/import-data';
 import {getCombinedData} from '../../../commands/publish';
-import {CombinedData} from '../../../interfaces';
+import {
+  CombinedData,
+  BuiltData,
+  Page,
+  Section,
+} from '../../../interfaces';
 
 interface ThemeOrPlugin {
   namespace: string;
@@ -390,7 +388,7 @@ function getCombinedPluginData(
 
 async function updateCss(
   themeOrPlugin: ThemeOrPlugin,
-  builtData: Data,
+  builtData: BuiltData,
   type: string,
   namespacePath: string,
   frontendPath?: string
@@ -414,7 +412,6 @@ async function updateCss(
           const oldPlugin = oldPlugins[i];
 
           if (!newPlugins.includes(oldPlugin)) {
-
             // More flexible regex to match possible variations of the import statement
             const pluginImportRegex = new RegExp(
               `@import\\s+['"]\\./plugins/${oldPlugin}/index\\.css['"];\\s*`,
@@ -566,7 +563,7 @@ async function transformPluginData(
   sectionPositionData: any;
   combinedPluginData: any;
 }> {
-  let combinedData: Data = {
+  let combinedData: BuiltData = {
     collections: {},
     contentTypes: [],
     pages: [],
@@ -589,7 +586,7 @@ async function transformPluginData(
         if (decompressedData) {
           let data = JSON.parse(decompressedData.toString('utf-8'));
 
-          let transformedData: Data | null = await writePluginFiles(
+          let transformedData: BuiltData | null = await writePluginFiles(
             setup.namespace,
             data,
             outputPath,
@@ -652,8 +649,8 @@ async function writePluginFiles(
   data: any,
   outputPath: string,
   srcDir: string
-): Promise<Data | null> {
-  let transformedData: Data;
+): Promise<BuiltData | null> {
+  let transformedData: BuiltData;
   const writeTasks: Promise<void>[] = [];
   try {
     for (const [filePath, content] of Object.entries(data.components || {})) {
@@ -731,8 +728,8 @@ async function writePluginFiles(
 export function transformData(
   data: Record<string, any>,
   namespace?: string
-): Data {
-  const transformed: Data = {
+): BuiltData {
+  const transformed: BuiltData = {
     collections: {},
     contentTypes: [],
     pages: [],
@@ -764,9 +761,9 @@ export function transformData(
         Object.keys(value[newKey]).forEach(name => {
           value[newKey]![name].namespace = namespace;
         });
-        transformed[newKey as keyof Data] = value[newKey] as any;
+        transformed[newKey as keyof BuiltData] = value[newKey] as any;
       } else {
-        transformed[newKey as keyof Data] = value[
+        transformed[newKey as keyof BuiltData] = value[
           newKey as keyof DataFile
         ] as any;
       }
@@ -823,13 +820,13 @@ async function createMergedData(
   pageSections: any,
   isConfig?: boolean,
   frontendPath?: string
-): Promise<Data> {
+): Promise<BuiltData> {
   return new Promise(async resolve => {
     const dataPath = `${frontendPath ? `${frontendPath}/` : ''}public/data`;
-    const themeData = await getThemeData(frontendPath);
+    const themeData = await getThemeData(type, frontendPath);
     themeData.plugins =
       type === 'theme' && themeOrPlugin.plugins ? themeOrPlugin.plugins : [];
-    const mergedData: Data = mergeData(themeData, pluginsData);
+    const mergedData: BuiltData = mergeData(themeData, pluginsData);
     let updatedPages = themeData.pages;
     if (Object.keys(pluginsData).length > 0) {
       // Handle the merging of pages separately
@@ -928,7 +925,10 @@ const orderSections = (sections: Sections): Sections => {
   return orderedSections;
 };
 
-async function getThemeData(frontendPath?: string): Promise<Data> {
+async function getThemeData(
+  type: string,
+  frontendPath?: string
+): Promise<BuiltData> {
   const dataPath = `${frontendPath ? `${frontendPath}/` : ''}public/data`;
   // Read data from other files
   const pagesData = await readJsonFile(path.join(dataPath, 'pages.json'));
@@ -939,19 +939,25 @@ async function getThemeData(frontendPath?: string): Promise<Data> {
   const templatesData = await readJsonFile(
     path.join(dataPath, 'templates.json')
   );
-  const globalData = await readJsonFile(path.join(dataPath, 'global.json'));
+  let globalData = null;
+  if (type === 'theme') {
+    globalData = await readJsonFile(path.join(dataPath, 'global.json'));
+  }
+
   const layoutData = await readJsonFile(path.join(dataPath, 'layout.json'));
 
-  const themeData: Data = {
+  const themeData: BuiltData = {
     contentTypes: contentTypesData.contentTypes || [],
     pages: pagesData.pages || [],
     sections: sectionsData.sections || [],
     templates: templatesData.templates || [],
     layout: layoutData.layout || {},
-    global: globalData.global || {},
     collections: {},
     plugins: [],
   };
+  if (globalData) {
+    themeData.global = globalData.global ? globalData.global : {};
+  }
 
   return themeData;
 }

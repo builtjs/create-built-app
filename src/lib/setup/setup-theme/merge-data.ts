@@ -1,3 +1,12 @@
+import {
+  BuiltData, 
+  ContentType,
+  DemoSection,
+  Page,
+  Template,
+  Layout
+} from '../../../interfaces';
+
 export type FieldType = {
   type: string;
   targetField?: string;
@@ -5,48 +14,38 @@ export type FieldType = {
   unique?: boolean;
 };
 
-export type ContentType = {
-  name: string;
-  title: string;
-  fields: Record<string, FieldType>;
-};
+// export type ContentType = {
+//   name: string;
+//   title: string;
+//   fields: Record<string, FieldType>;
+// };
 
-type DemoSection = {
-  name: string;
-};
+// type DemoSection = {
+//   name: string;
+// };
 
-export type Page = {
-  name: string;
-  title: string;
-  demoSections: DemoSection[];
-};
+// export type Page = {
+//   name: string;
+//   title: string;
+//   demoSections: DemoSection[];
+// };
 
-export type Section = {
-  name: string;
-  title: string;
-  description: string;
-  templates: string[];
-  defaultTemplate: {name: string};
-  data: Record<string, string>;
-  collections: Record<string, any>;
-  position: number;
-  namespace: string;
-};
 
-export type Template = {
-  name: string;
-  title: string;
-  category: string;
-  description: string;
-  images: Record<string, string>;
-  repoUrl: string;
-  demoUrl: string;
-};
 
-export type Layout = {
-  contentIndex: number;
-  sections: DemoSection[];
-};
+// export type Template = {
+//   name: string;
+//   title: string;
+//   category: string;
+//   description: string;
+//   images: Record<string, string>;
+//   repoUrl: string;
+//   demoUrl: string;
+// };
+
+// export type Layout = {
+//   contentIndex: number;
+//   sections: DemoSection[];
+// };
 
 export type Global = {};
 
@@ -54,18 +53,18 @@ export type Collection = {
   [key: string]: any[];
 };
 
-export type Data = {
-  contentTypes: ContentType[];
-  pages: Page[];
-  sections: Section[];
-  templates: Template[];
-  layout: Layout;
-  global: Global;
-  collections: Collection;
-  plugins: string[];
-};
+// export type Data = {
+//   contentTypes: ContentType[];
+//   pages: Page[];
+//   sections: Section[];
+//   templates: Template[];
+//   layout: Layout;
+//   global?: Global;
+//   collections: Collection;
+//   plugins: string[];
+// };
 
-function mergeArraysDistinct<T extends { name: string; namespace?: string }>(
+function mergeArraysDistinct<T extends {name: string; namespace?: string}>(
   arr1: T[],
   arr2: T[]
 ): T[] {
@@ -85,8 +84,8 @@ function mergeArraysDistinct<T extends { name: string; namespace?: string }>(
         item1.namespace === item2.namespace ? item1.namespace : undefined;
 
       // Merge objects, excluding namespace if they differ
-      const { namespace: _, ...rest } = item2; // Exclude namespace from item2
-      merged[index] = { ...item1, ...rest, namespace };
+      const {namespace: _, ...rest} = item2; // Exclude namespace from item2
+      merged[index] = {...item1, ...rest, namespace};
     }
   });
 
@@ -97,7 +96,6 @@ function mergeArrays<T>(arr1: T[], arr2: T[]): T[] {
   // Concatenate both arrays and return the result
   return [...arr1, ...arr2];
 }
-
 
 function isNamedArray<T>(value: any): value is T[] {
   return (
@@ -127,18 +125,21 @@ function mergeObjects<T extends Record<string, any>>(obj1: T, obj2: T): T {
   return merged;
 }
 
-export function mergeData(data1: Data, data2: Data): Data {
+export function mergeData(data1: BuiltData, data2: BuiltData): BuiltData {
   if (Object.keys(data2).length === 0) {
     return data1;
   }
-  return {
+  let data: BuiltData = {
     contentTypes: mergeArraysDistinct(data1.contentTypes, data2.contentTypes),
     pages: mergeArraysDistinct(data1.pages, data2.pages),
     sections: mergeArraysDistinct(data1.sections, data2.sections),
     templates: mergeArrays(data1.templates, data2.templates),
     layout: mergeObjects<Layout>(data1.layout, data2.layout),
-    global: mergeObjects<Global>(data1.global, data2.global),
     collections: mergeObjects<Collection>(data1.collections, data2.collections),
-    plugins: data1.plugins || []
+    plugins: data1.plugins || [],
   };
+  if (data1.global && data2.global) {
+    data.global = mergeObjects<Global>(data1.global, data2.global);
+  }
+  return data;
 }
