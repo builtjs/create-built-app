@@ -14,55 +14,11 @@ export type FieldType = {
   unique?: boolean;
 };
 
-// export type ContentType = {
-//   name: string;
-//   title: string;
-//   fields: Record<string, FieldType>;
-// };
-
-// type DemoSection = {
-//   name: string;
-// };
-
-// export type Page = {
-//   name: string;
-//   title: string;
-//   demoSections: DemoSection[];
-// };
-
-
-
-// export type Template = {
-//   name: string;
-//   title: string;
-//   category: string;
-//   description: string;
-//   images: Record<string, string>;
-//   repoUrl: string;
-//   demoUrl: string;
-// };
-
-// export type Layout = {
-//   contentIndex: number;
-//   sections: DemoSection[];
-// };
-
 export type Global = {};
 
 export type Collection = {
   [key: string]: any[];
 };
-
-// export type Data = {
-//   contentTypes: ContentType[];
-//   pages: Page[];
-//   sections: Section[];
-//   templates: Template[];
-//   layout: Layout;
-//   global?: Global;
-//   collections: Collection;
-//   plugins: string[];
-// };
 
 function mergeArraysDistinct<T extends {name: string; namespace?: string}>(
   arr1: T[],
