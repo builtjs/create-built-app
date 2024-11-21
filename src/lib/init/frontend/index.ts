@@ -119,7 +119,7 @@ function moveCommon(src: string, dest: string) {
         //-> Moving index.d.ts file to frontend project
         copyRecursiveSync(`${src}/index.d.ts`, `${dest}/index.d.ts`);
       } catch (error) {
-        console.error('No "index.d" file found. Skipping...');
+        // do nothing
       }
       let tailwindConfigPath = '';
       try {
@@ -353,7 +353,6 @@ function move(from: string, to: string) {
 }
 
 async function movePages(srcPath: string, type: string, namespace: string) {
-  console.log('move pages...')
   const appPath = `${srcPath}/pages/_app.tsx`;
   let appData: any = await fs.promises.readFile(appPath, 'utf8');
   fs.rmSync(`${srcPath}/pages`, {recursive: true, force: true});
