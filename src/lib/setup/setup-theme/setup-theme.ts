@@ -11,12 +11,7 @@ import {mergeData} from '../../../lib/setup/setup-theme/merge-data';
 import {updateImagesForThemeOrPlugin} from '../../../lib/setup/setup-theme/setup-images';
 import {setupSiteData} from '../../../lib/setup/setup-site/import-data/import-data';
 import {getCombinedData} from '../../../commands/publish';
-import {
-  CombinedData,
-  BuiltData,
-  Page,
-  Section,
-} from '../../../interfaces';
+import {CombinedData, BuiltData, Page, Section} from '../../../interfaces';
 
 interface ThemeOrPlugin {
   namespace: string;
@@ -153,14 +148,15 @@ export async function update(
         isConfig,
         frontendPath
       );
-
-      await updateCss(
-        themeOrPlugin,
-        builtData,
-        type,
-        namespacePath,
-        frontendPath
-      );
+      if (type === 'theme') {
+        await updateCss(
+          themeOrPlugin,
+          builtData,
+          type,
+          namespacePath,
+          frontendPath
+        );
+      }
 
       await updateImagesForThemeOrPlugin(
         themeOrPlugin,
@@ -364,14 +360,16 @@ function getCombinedPluginData(
                 isConfig
               );
             }
+            if (type === 'theme') {
+              await updateCss(
+                themeOrPlugin,
+                builtData,
+                type,
+                namespacePath,
+                frontendPath
+              );
+            }
 
-            await updateCss(
-              themeOrPlugin,
-              builtData,
-              type,
-              namespacePath,
-              frontendPath
-            );
             return resolve(updatedCombinedPluginData);
           } catch (error) {
             console.error('Error: Unable to build layout file.', error);
@@ -834,15 +832,11 @@ async function createMergedData(
         const newPage = themeData.pages.find(
           (page: Page) => page.name === existingPage.name
         );
-        if (newPage) {
-          // Create demoSections based on sectionPositions
-          const positions = pageSections[existingPage.name] || {};
-          const demoSections = Object.keys(positions)
-            .map(name => ({name}))
-            .sort((a, b) => positions[a.name] - positions[b.name]);
-          return {...existingPage, ...newPage, demoSections};
-        }
-        return existingPage;
+        const positions = pageSections[existingPage.name] || {};
+        const demoSections = Object.keys(positions)
+          .map(name => ({name}))
+          .sort((a, b) => positions[a.name] - positions[b.name]);
+        return {...existingPage, ...newPage, demoSections};
       });
     } else {
       updatedPages = themeData.pages.map((page: Page) => {

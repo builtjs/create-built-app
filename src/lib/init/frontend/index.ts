@@ -353,6 +353,7 @@ function move(from: string, to: string) {
 }
 
 async function movePages(srcPath: string, type: string, namespace: string) {
+  console.log('move pages...')
   const appPath = `${srcPath}/pages/_app.tsx`;
   let appData: any = await fs.promises.readFile(appPath, 'utf8');
   fs.rmSync(`${srcPath}/pages`, {recursive: true, force: true});
