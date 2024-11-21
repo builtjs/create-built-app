@@ -820,7 +820,7 @@ async function createMergedData(
   frontendPath?: string
 ): Promise<BuiltData> {
   return new Promise(async resolve => {
-    const dataPath = `${frontendPath ? `${frontendPath}/` : ''}public/data`;
+    const pagesPath = `${frontendPath ? `${frontendPath}/` : ''}pages`;
     const themeData = await getThemeData(type, frontendPath);
     themeData.plugins =
       type === 'theme' && themeOrPlugin.plugins ? themeOrPlugin.plugins : [];
@@ -828,16 +828,18 @@ async function createMergedData(
     let updatedPages = themeData.pages;
     if (Object.keys(pluginsData).length > 0) {
       // Handle the merging of pages separately
-      updatedPages = pluginsData.pages.map((existingPage: Page) => {
+      updatedPages = pluginsData.pages.map((pluginPage: Page) => {
         const newPage = themeData.pages.find(
-          (page: Page) => page.name === existingPage.name
+          (page: Page) => page.name === pluginPage.name
         );
-        const positions = pageSections[existingPage.name] || {};
+        const positions = pageSections[pluginPage.name] || {};
         const demoSections = Object.keys(positions)
           .map(name => ({name}))
           .sort((a, b) => positions[a.name] - positions[b.name]);
-        return {...existingPage, ...newPage, demoSections};
+        return {...pluginPage, ...newPage, demoSections};
       });
+
+      await createPageFiles(pagesPath, pluginsData.pages);
     } else {
       updatedPages = themeData.pages.map((page: Page) => {
         const positions = pageSections[page.name] || {};
@@ -902,6 +904,84 @@ async function createMergedData(
     );
     return resolve(mergedData);
   });
+}
+
+function getArticlePageCode(pageName: string, contentTypeName: string): string {
+  return `import { GetStaticPaths, GetStaticProps } from "next";
+  import { withRouter } from "next/router";
+  import { getConfig, fetchEntries } from "@builtjs/theme";
+  import Page from "@/lib/theme/page";
+  
+  export default withRouter(Page);
+  
+  export const getStaticPaths: GetStaticPaths = async () => {
+    const entryData:any = await fetchEntries('${contentTypeName}');
+    return {
+      paths:
+        entryData.entries.map(
+          (entry:any) => \`/${contentTypeName}/\${entry.slug}\`
+        ) ?? [],
+      fallback: true,
+    };
+  };
+  
+  export const getStaticProps: GetStaticProps = async ({params}) => {
+    const config = await getConfig({pageName: '${pageName}'});
+    config.params = params;
+    return {
+      props: { config }
+    };
+  };`;
+}
+
+function getPageCode(pageName: string): string {
+  return `import { withRouter } from "next/router";
+  import { getConfig } from "@builtjs/theme";
+  import Page from "@/lib/theme/page";
+  
+  export default withRouter(Page);
+  
+  export async function getStaticProps() {
+    const config = await getConfig({
+      pageName: '${pageName}'
+    });
+    return {
+      props: { config }
+    };
+  }`;
+}
+
+async function createPageFiles(
+  pagesPath: string,
+  pages: Array<{ name: string; title: string; contentType?: { name: string } }>
+) {
+  for (const page of pages) {
+    const { name, contentType } = page;
+
+    let filePath: string;
+    let fileContent: string;
+
+    if (contentType) {
+      // Content type exists, create dynamic page under [slug] folder
+      filePath = path.join(pagesPath, contentType.name, '[slug].tsx');
+      fileContent = getArticlePageCode(page.name, contentType.name);
+    } else {
+      // No content type, create file at the root of pages
+      const kebabCaseName = _.kebabCase(name);
+      filePath = path.join(pagesPath, `${kebabCaseName}.tsx`);
+      fileContent = getPageCode(name);
+    }
+
+    try {
+      // Ensure directory exists
+      await fsp.mkdir(path.dirname(filePath), { recursive: true });
+
+      // Write the file
+      await fsp.writeFile(filePath, fileContent, 'utf8');
+    } catch (error) {
+      console.error(`Failed to create file: ${filePath}`, error);
+    }
+  }
 }
 
 const orderSections = (sections: Sections): Sections => {
