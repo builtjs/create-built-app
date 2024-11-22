@@ -118,21 +118,6 @@ function collectData(
     targetObject[standardizedPath] = isJson ? JSON.parse(fileContent) : fileContent;
   }
 }
-// function collectData(
-//   baseDir: string,
-//   files: FileObject[],
-//   targetObject: {[key: string]: any},
-//   isJson: boolean = false
-// ): void {
-//   for (const file of files) {
-//     const result = getFile(baseDir, file);
-//     const {relativePath, fileContent} = result;
-//     if (!relativePath || !fileContent) {
-//       continue;
-//     }
-//     targetObject[relativePath] = isJson ? JSON.parse(fileContent) : fileContent;
-//   }
-// }
 
 function removeSubstringFromStart(str: string, substring: string): string {
   if (str.startsWith(substring)) {
@@ -167,28 +152,44 @@ interface NodeJsError extends Error {
 }
 
 function getFile(baseDir: string, file: FileObject) {
-  const sanitizedPath = sanitizeFilePath(path.relative(baseDir, file.path));
+  // Ensure absolute paths
+  const absoluteBaseDir = path.resolve(baseDir);
+  const absoluteFilePath = path.resolve(file.path);
+
+  // Get relative path and sanitize
+  const sanitizedPath = sanitizeFilePath(path.relative(absoluteBaseDir, absoluteFilePath));
+
   if (!isValidFileType(sanitizedPath) || !isFileSizeValid(file)) {
     console.warn(`Skipping invalid or large file: ${sanitizedPath}`);
-    return {relativePath: null, fileContent: null};
+    return { relativePath: null, fileContent: null };
   }
+
+  if (!fs.existsSync(absoluteFilePath)) {
+    if (file.required) {
+      console.error(`Error: Required file not found: ${absoluteFilePath}`);
+      process.exit(1);
+    }
+    return { relativePath: null, fileContent: null };
+  }
+
   let fileContent = null;
   try {
-    fileContent = fs.readFileSync(file.path, 'utf8');
+    fileContent = fs.readFileSync(absoluteFilePath, 'utf8');
   } catch (error) {
     const nodeError = error as NodeJsError;
     if (nodeError.code === 'ENOENT') {
       if (file.required) {
-        console.error(`Error: Required file not found: ${file.path}`);
+        console.error(`Error: Required file not found: ${absoluteFilePath}`);
         process.exit(1);
       }
     } else {
-      console.error(`Error: Unable to read file: ${file.path}`, error);
+      console.error(`Error: Unable to read file: ${absoluteFilePath}`, error);
       if (file.required) process.exit(1);
     }
   }
-  let relativePath = removeSubstringFromStart(sanitizedPath, 'src/');
-  return {relativePath, fileContent};
+
+  const relativePath = removeSubstringFromStart(sanitizedPath, 'src/');
+  return { relativePath, fileContent };
 }
 
 function sanitizeFilePath(filePath: string): string {
@@ -305,11 +306,14 @@ function getAllFiles(
   try {
     const entries = fs.readdirSync(dirPath, { withFileTypes: true });
     for (const entry of entries) {
-      const fullPath = path.join(dirPath, entry.name);
+      const fullPath = path.resolve(path.join(dirPath, entry.name));
       if (entry.isDirectory()) {
         getAllFiles(fullPath, files);
       } else if (entry.isFile()) {
-        files.push({ path: path.posix.join(...fullPath.split(path.sep)), required: true });
+        files.push({
+          path: fullPath,
+          required: true,
+        });
       }
     }
   } catch (error) {
@@ -319,33 +323,7 @@ function getAllFiles(
     }
     return [];
   }
-
   return files;
 }
-// function getAllFiles(
-//   dirPath: string,
-//   files: FileObject[] = [],
-//   required: boolean = false
-// ): FileObject[] {
-//   try {
-//     const entries = fs.readdirSync(dirPath, {withFileTypes: true});
-//     for (const entry of entries) {
-//       const fullPath = path.join(dirPath, entry.name);
-//       if (entry.isDirectory()) {
-//         getAllFiles(fullPath, files);
-//       } else if (entry.isFile()) {
-//         files.push({path: fullPath, required: true});
-//       }
-//     }
-//   } catch (error) {
-//     if (required) {
-//       console.error(`Error: Unable to read directory: ${dirPath}`);
-//       process.exit(1);
-//     }
-//     return [];
-//   }
-
-//   return files;
-// }
 
 export {publish};
