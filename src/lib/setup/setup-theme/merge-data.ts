@@ -1,9 +1,5 @@
 import {
   BuiltData, 
-  ContentType,
-  DemoSection,
-  Page,
-  Template,
   Layout
 } from '../../../interfaces';
 
