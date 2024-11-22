@@ -9,7 +9,6 @@ import * as zlib from 'zlib';
 import * as _ from 'lodash';
 import {mergeData} from '../../../lib/setup/setup-theme/merge-data';
 import {updateImagesForThemeOrPlugin} from '../../../lib/setup/setup-theme/setup-images';
-import {setupSiteData} from '../../../lib/setup/setup-site/import-data/import-data';
 import {getCombinedData} from '../../../commands/publish';
 import {CombinedData, BuiltData, Page, Section} from '../../../interfaces';
 
@@ -518,7 +517,7 @@ async function setupPlugins(
         const response = await axios.post(url, {apiKey, namespace});
         return {namespace, data: response.data};
       } catch (error: any) {
-        console.error(`Failed to setup plugin for namespace ${namespace}.`);
+        console.error(`Failed to setup plugin for namespace ${namespace}. Are you sure it exists?`);
 
         if (error.response) {
           if (error.response.data.message) {
