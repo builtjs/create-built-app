@@ -79,9 +79,15 @@ export async function updateThemeOrPlugin() {
   if (!isValid) {
     apiKey = await promptForApiKey();
   }
-  if (apiKey && isValid) {
-    await saveApiKeyToConfig(apiKey);
-    await update(themeOrPlugin, type, apiKey, process.cwd());
+  if (apiKey) {
+    const isValid = await validateApiKey(apiKey);
+    if(isValid){
+      await saveApiKeyToConfig(apiKey);
+      await update(themeOrPlugin, type, apiKey, process.cwd());
+    } else {
+      console.error('Unable to process API key.');
+      process.exit(1);
+    }
   } else {
     console.error('Unable to process API key.');
     process.exit(1);
