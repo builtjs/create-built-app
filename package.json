@@ -1,6 +1,6 @@
 {
   "name": "create-built-app",
-  "version": "1.3.31",
+  "version": "1.3.33",
   "description": "Node.js CLI for building Built.js themes, plugins and sites",
   "license": "MIT",
   "repository": {

@@ -103,18 +103,36 @@ function collectAllConfigData(data: CombinedData, srcDir: string) {
 function collectData(
   baseDir: string,
   files: FileObject[],
-  targetObject: {[key: string]: any},
+  targetObject: { [key: string]: any },
   isJson: boolean = false
 ): void {
   for (const file of files) {
     const result = getFile(baseDir, file);
-    const {relativePath, fileContent} = result;
+    const { relativePath, fileContent } = result;
     if (!relativePath || !fileContent) {
       continue;
     }
-    targetObject[relativePath] = isJson ? JSON.parse(fileContent) : fileContent;
+
+    // Standardize the relative path
+    const standardizedPath = path.posix.join(...relativePath.split(path.sep));
+    targetObject[standardizedPath] = isJson ? JSON.parse(fileContent) : fileContent;
   }
 }
+// function collectData(
+//   baseDir: string,
+//   files: FileObject[],
+//   targetObject: {[key: string]: any},
+//   isJson: boolean = false
+// ): void {
+//   for (const file of files) {
+//     const result = getFile(baseDir, file);
+//     const {relativePath, fileContent} = result;
+//     if (!relativePath || !fileContent) {
+//       continue;
+//     }
+//     targetObject[relativePath] = isJson ? JSON.parse(fileContent) : fileContent;
+//   }
+// }
 
 function removeSubstringFromStart(str: string, substring: string): string {
   if (str.startsWith(substring)) {
@@ -285,13 +303,13 @@ function getAllFiles(
   required: boolean = false
 ): FileObject[] {
   try {
-    const entries = fs.readdirSync(dirPath, {withFileTypes: true});
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
       if (entry.isDirectory()) {
         getAllFiles(fullPath, files);
       } else if (entry.isFile()) {
-        files.push({path: fullPath, required: true});
+        files.push({ path: path.posix.join(...fullPath.split(path.sep)), required: true });
       }
     }
   } catch (error) {
@@ -304,5 +322,30 @@ function getAllFiles(
 
   return files;
 }
+// function getAllFiles(
+//   dirPath: string,
+//   files: FileObject[] = [],
+//   required: boolean = false
+// ): FileObject[] {
+//   try {
+//     const entries = fs.readdirSync(dirPath, {withFileTypes: true});
+//     for (const entry of entries) {
+//       const fullPath = path.join(dirPath, entry.name);
+//       if (entry.isDirectory()) {
+//         getAllFiles(fullPath, files);
+//       } else if (entry.isFile()) {
+//         files.push({path: fullPath, required: true});
+//       }
+//     }
+//   } catch (error) {
+//     if (required) {
+//       console.error(`Error: Unable to read directory: ${dirPath}`);
+//       process.exit(1);
+//     }
+//     return [];
+//   }
+
+//   return files;
+// }
 
 export {publish};
