@@ -1,5 +1,5 @@
 export namespace Constants {
-  export const API_URL = 'http://localhost';//'https://api.builtjs.com';
+  export const API_URL = 'https://api.builtjs.com';
   export const CURRENT_API_VERSION = '1.2';
   export const defaults = {
     LANGUAGE: 'typescript',
