@@ -517,7 +517,7 @@ async function setupPlugins(
         const response = await axios.post(url, {apiKey, namespace});
         return {namespace, data: response.data};
       } catch (error: any) {
-        console.error(`Failed to update theme with plugin of namespace: "${namespace}". Are you sure it exists?`);
+        console.error(`Failed to setup plugin for namespace ${namespace}. Are you sure it exists?`);
 
         if (error.response) {
           if (error.response.data.message) {
