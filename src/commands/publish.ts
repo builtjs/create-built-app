@@ -17,7 +17,6 @@ async function publish() {
   const {combinedData, type} = await getCombinedData(true);
   // Compress combinedData before sending
   const compressedData = compressData(combinedData);
-
   try {
     await sendRequest(type, compressedData);
   } catch (error) {
@@ -246,7 +245,6 @@ export async function sendRequest(type: string, data: Buffer): Promise<void> {
       console.error('Unable to process API key.');
       process.exit(1);
     }
-
     const isValid = await validateApiKey(apiKey);
     if (!isValid) {
       apiKey = await promptForApiKey();
@@ -265,7 +263,6 @@ export async function sendRequest(type: string, data: Buffer): Promise<void> {
           },
         }
       );
-
       if (response.data && response.data.success && response.data.url) {
         console.log(
           `Your ${type} has been ${
@@ -294,6 +291,7 @@ export async function sendRequest(type: string, data: Buffer): Promise<void> {
       process.exit(1);
     }
   } catch (error) {
+    console.error('10...');
     console.error('Error:', error);
   }
 }

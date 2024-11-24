@@ -517,7 +517,9 @@ async function setupPlugins(
         const response = await axios.post(url, {apiKey, namespace});
         return {namespace, data: response.data};
       } catch (error: any) {
-        console.error(`Failed to setup plugin for namespace ${namespace}. Are you sure it exists?`);
+        console.error(
+          `Failed to setup plugin for namespace ${namespace}. Are you sure it exists?`
+        );
 
         if (error.response) {
           if (error.response.data.message) {
@@ -577,12 +579,10 @@ async function transformPluginData(
   await Promise.all(
     results.successfulSetups.map(async (setup: SetupResult) => {
       if (setup.data.filesData && setup.data.layoutData) {
-        // Convert setup.data.filesData.data to Buffer before decompressing
         const compressedBuffer = Buffer.from(setup.data.filesData.data);
         const decompressedData = await decompressData(compressedBuffer);
         if (decompressedData) {
           let data = JSON.parse(decompressedData.toString('utf-8'));
-
           let transformedData: BuiltData | null = await writePluginFiles(
             setup.namespace,
             data,
@@ -614,14 +614,18 @@ async function transformPluginData(
               importsCode += layoutImportsCode;
             }
           }
-          sectionPositionData = transformSectionPositionData(
+          // Merge the results of transformSectionPositionData into sectionPositionData
+          const transformedSectionPositionData = transformSectionPositionData(
             data.data[`module-pages.json`]
           );
+          sectionPositionData = {
+            ...sectionPositionData,
+            ...transformedSectionPositionData,
+          };
         }
       }
     })
   );
-
   return {
     updatedThemeLayoutFileContent: transformedThemeLayoutFileContent,
     updatedImportsCode: importsCode,
@@ -952,10 +956,10 @@ function getPageCode(pageName: string): string {
 
 async function createPageFiles(
   pagesPath: string,
-  pages: Array<{ name: string; title: string; contentType?: { name: string } }>
+  pages: Array<{name: string; title: string; contentType?: {name: string}}>
 ) {
   for (const page of pages) {
-    const { name, contentType } = page;
+    const {name, contentType} = page;
 
     let filePath: string;
     let fileContent: string;
@@ -973,7 +977,7 @@ async function createPageFiles(
 
     try {
       // Ensure directory exists
-      await fsp.mkdir(path.dirname(filePath), { recursive: true });
+      await fsp.mkdir(path.dirname(filePath), {recursive: true});
 
       // Write the file
       await fsp.writeFile(filePath, fileContent, 'utf8');
@@ -1013,9 +1017,9 @@ async function getThemeData(
     path.join(dataPath, 'templates.json')
   );
   let globalData = null;
-  if (type === 'theme') {
-    globalData = await readJsonFile(path.join(dataPath, 'global.json'));
-  }
+  // if (type === 'theme') {
+  globalData = await readJsonFile(path.join(dataPath, 'global.json'));
+  // }
 
   const layoutData = await readJsonFile(path.join(dataPath, 'layout.json'));
 
