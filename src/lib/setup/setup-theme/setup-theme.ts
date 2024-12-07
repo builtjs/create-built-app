@@ -10,13 +10,9 @@ import * as _ from 'lodash';
 import {mergeData} from '../../../lib/setup/setup-theme/merge-data';
 import {updateImagesForThemeOrPlugin} from '../../../lib/setup/setup-theme/setup-images';
 import {getCombinedData} from '../../../commands/publish';
-import {CombinedData, BuiltData, Page, Section} from '../../../interfaces';
+import {CombinedData, BuiltData, Page, Section, ThemeOrPlugin} from '../../../interfaces';
 
-interface ThemeOrPlugin {
-  namespace: string;
-  language?: string;
-  plugins?: string[];
-}
+
 
 interface ThemeData {
   pages: Page[];

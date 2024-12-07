@@ -291,7 +291,6 @@ export async function sendRequest(type: string, data: Buffer): Promise<void> {
       process.exit(1);
     }
   } catch (error) {
-    console.error('10...');
     console.error('Error:', error);
   }
 }

@@ -25,6 +25,8 @@ program
   program
   .command('update')
   .description('Update theme.')
+  .option('--screenshots', 'Update screenshots for all sections')
+  .option('-p, --port <number>', 'Specify the port number of the Next.js app')
   .action(updateThemeOrPlugin);
 
 program.parse();

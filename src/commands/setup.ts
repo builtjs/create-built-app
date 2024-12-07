@@ -9,6 +9,7 @@ import {
   saveApiKeyToConfig,
   validateApiKey,
 } from '../lib/apiKeyUtils';
+import { updateScreenshots } from './update-screenshots';
 
 interface ThemeOrPlugin {
   language?: string;
@@ -52,7 +53,7 @@ async function fileExists(path: string) {
   }
 }
 
-export async function updateThemeOrPlugin() {
+export async function updateThemeOrPlugin(options: any) {
   let type = 'theme';
   let themeOrPlugin = await getThemeOrPlugin('theme');
   if (!themeOrPlugin) {
@@ -83,6 +84,13 @@ export async function updateThemeOrPlugin() {
     const isValid = await validateApiKey(apiKey);
     if(isValid){
       await saveApiKeyToConfig(apiKey);
+      if(options.screenshots) {
+        let customPort;
+        if(options.port || options.p){
+          customPort = options.port ? options.port : options.p;
+        }
+        await updateScreenshots(themeOrPlugin, type, customPort)
+      }
       await update(themeOrPlugin, type, apiKey, process.cwd());
     } else {
       console.error('Unable to process API key.');
