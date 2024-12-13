@@ -34,7 +34,6 @@ export async function readPagesFile(): Promise<PagesData> {
 
 export async function readCollectionFile(collectionName: string): Promise<CollectionData> {
   try {
-    console.log( `public/data/collections/${collectionName}.json`)
     const pagesPath = path.join(process.cwd(), `public/data/collections/${collectionName}.json`);
     const data = await fs.readFile(pagesPath, 'utf-8');
     return JSON.parse(data) as CollectionData;
