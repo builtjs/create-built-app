@@ -36,6 +36,7 @@ export function getCombinedData(
     const srcDir = getSrcDir();
     const componentsDir = `${srcDir}/components`;
     const libDir = `${srcDir}/lib`;
+    const hooksDir = `${srcDir}/hooks`;
     const stylesDir = `${srcDir}/styles`;
     const apiDir = `${srcDir}/pages/api`;
 
@@ -46,6 +47,7 @@ export function getCombinedData(
       data: {},
       components: {},
       lib: {},
+      hooks: {},
       styles: {},
       api: {},
       config: {},
@@ -72,6 +74,9 @@ export function getCombinedData(
 
     const libFiles = getAllFiles(libDir);
     collectData(libDir, libFiles, combinedData.lib);
+
+    const hooksFiles = getAllFiles(hooksDir);
+    collectData(hooksDir, hooksFiles, combinedData.hooks);
 
     const stylesFiles = getAllFiles(stylesDir);
     collectData(stylesDir, stylesFiles, combinedData.styles);

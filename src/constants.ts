@@ -27,6 +27,7 @@ export namespace Constants {
   export const THEME_PUBLIC_DIR = CONFIG_PREFIX + '/public';
   export const THEME_PAGES_DIR = CONFIG_PREFIX + '/pages';
   export const THEME_STYLES_DIR = CONFIG_PREFIX + '/styles';
+  export const THEME_HOOKS_DIR = CONFIG_PREFIX + '/hooks';
   export const THEME_COMPONENTS_DIR = CONFIG_PREFIX + '/components';
   export const THEME_LIB_DIR = CONFIG_PREFIX + '/lib';
   export const errorMessages = {
