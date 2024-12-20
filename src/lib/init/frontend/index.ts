@@ -1,8 +1,6 @@
 import * as fs from 'fs';
 import {copyRecursiveSync, exists} from '../../../utils';
 import {Constants} from '../../../constants';
-import {update} from '../../setup/setup-theme/setup-theme';
-import {getThemeOrPlugin} from '../../../commands/setup';
 import {
   getApiKey,
   promptForApiKey,
@@ -36,30 +34,17 @@ export async function installFrontendSite(
     }
 
     try {
+      //-> Moving hooks directory to frontend project
+      copyRecursiveSync(`${frontendConfigPath}/hooks`, `${srcPath}/hooks`);
+    } catch (error) {}
+
+    try {
       //-> Moving setup directory to frontend project
       copyRecursiveSync(`${frontendConfigPath}/setup`, `${srcPath}/setup`);
     } catch (error) {
       console.error(
         'An error occurred when moving the config/setup directory to the frontend project. Are you sure it exists?'
       );
-    }
-
-    try {
-      //-> Moving ibuiltjs-utilsfile to frontend project
-      copyRecursiveSync(
-        `${frontendConfigPath}/builtjs-utils.js`,
-        `${srcPath}/builtjs-utils.js`
-      );
-    } catch (error) {
-      try {
-        //-> Moving builtjs-utils file to frontend project
-        copyRecursiveSync(
-          `${frontendConfigPath}/builtjs-utils.ts`,
-          `${srcPath}/builtjs-utils.ts`
-        );
-      } catch (error) {
-        console.error('No "builtjs-utils" file found. Skipping...');
-      }
     }
 
     try {
@@ -254,6 +239,7 @@ function moveCommon(src: string, dest: string) {
         console.error('No "builtjs-utils" file found. Skipping...');
       }
     }
+
     try {
       fs.rmSync(`${dest}/next.config.mjs`);
     } catch (error) {
@@ -337,6 +323,8 @@ export async function installFrontendThemeOrPlugin(
 
   fs.rmSync(`${frontendPath}/public`, {recursive: true, force: true});
   move(Constants.THEME_PUBLIC_DIR, `${frontendPath}/public`);
+
+  move(Constants.THEME_HOOKS_DIR, `${srcPath}/hooks`);
 
   console.log('Done!');
   // Finished installing

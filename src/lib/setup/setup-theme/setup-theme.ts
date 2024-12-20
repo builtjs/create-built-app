@@ -10,13 +10,12 @@ import * as _ from 'lodash';
 import {mergeData} from '../../../lib/setup/setup-theme/merge-data';
 import {updateImagesForThemeOrPlugin} from '../../../lib/setup/setup-theme/setup-images';
 import {getCombinedData} from '../../../commands/publish';
-import {CombinedData, BuiltData, Page, Section} from '../../../interfaces';
-
-interface ThemeOrPlugin {
-  namespace: string;
-  language?: string;
-  plugins?: string[];
-}
+import {
+  BuiltData,
+  Page,
+  Section,
+  ThemeOrPlugin,
+} from '../../../interfaces';
 
 interface ThemeData {
   pages: Page[];
@@ -77,7 +76,7 @@ export async function update(
   type: string,
   apiKey: string,
   frontendPath: string,
-  isConfig?: boolean
+  isConfig?: boolean,
 ) {
   return new Promise<void>(async resolve => {
     let namespacePath = '';
@@ -89,14 +88,14 @@ export async function update(
     const outputPath = path.join(
       frontendPath,
       'public/data/_built',
-      'data.json'
+      'data.json',
     );
     let combinedSectionPositionData: PageSectionData = {};
 
     let updatedCombinedPluginData = {};
     const builtDataPath = path.join(
       frontendPath,
-      `public/data/_built/data.json`
+      `public/data/_built/data.json`,
     );
     if (
       themeOrPlugin &&
@@ -112,29 +111,29 @@ export async function update(
         namespacePath,
         combinedSectionPositionData,
         type,
-        isConfig
+        isConfig,
       );
     } else {
       const {combinedData} = await getCombinedData(false);
       let transformedData = await transformData(combinedData.data);
       const themeModulePagesFilePath = path.join(
         frontendPath,
-        `/public/data/module-pages.json`
+        `/public/data/module-pages.json`,
       );
       try {
         const themeModulePagesFileContent = await fsp.readFile(
           themeModulePagesFilePath,
-          'utf8'
+          'utf8',
         );
         if (themeModulePagesFileContent) {
           combinedSectionPositionData = transformSectionPositionData(
-            JSON.parse(themeModulePagesFileContent)
+            JSON.parse(themeModulePagesFileContent),
           );
         }
       } catch (error) {
         console.error(
           `Error: Unable to read theme file: ${themeModulePagesFilePath}`,
-          error
+          error,
         );
         process.exit(1);
       }
@@ -145,7 +144,7 @@ export async function update(
         transformedData,
         combinedSectionPositionData,
         isConfig,
-        frontendPath
+        frontendPath,
       );
       if (type === 'theme') {
         await updateCss(
@@ -153,7 +152,7 @@ export async function update(
           builtData,
           type,
           namespacePath,
-          frontendPath
+          frontendPath,
         );
       }
 
@@ -162,7 +161,7 @@ export async function update(
         frontendPath,
         builtData,
         type,
-        isConfig
+        isConfig,
       );
     }
 
@@ -179,7 +178,7 @@ function getCombinedPluginData(
   namespacePath: string,
   combinedSectionPositionData: PageSectionData,
   type: string,
-  isConfig?: boolean
+  isConfig?: boolean,
 ): Promise<any> {
   return new Promise(async resolve => {
     if (!themeOrPlugin) {
@@ -203,7 +202,7 @@ function getCombinedPluginData(
     }`;
     const themeModulePagesFilePath = path.join(
       frontendPath,
-      `/public/data/module-pages.json`
+      `/public/data/module-pages.json`,
     );
     let importsCode = '';
 
@@ -211,17 +210,17 @@ function getCombinedPluginData(
     try {
       themeModulePagesFileContent = await fsp.readFile(
         themeModulePagesFilePath,
-        'utf8'
+        'utf8',
       );
       if (themeModulePagesFileContent) {
         combinedSectionPositionData = transformSectionPositionData(
-          JSON.parse(themeModulePagesFileContent)
+          JSON.parse(themeModulePagesFileContent),
         );
       }
     } catch (error) {
       console.error(
         `Error: Unable to read theme file: ${themeModulePagesFilePath}`,
-        error
+        error,
       );
       process.exit(1);
     }
@@ -232,11 +231,11 @@ function getCombinedPluginData(
     try {
       themeLayoutFileContent = await fsp.readFile(
         `${componentsPath}/layout.${ext}`,
-        'utf8'
+        'utf8',
       );
       if (!themeLayoutFileContent) {
         console.error(
-          `Error: No theme layout file content: ${componentsPath}/layout.${ext}`
+          `Error: No theme layout file content: ${componentsPath}/layout.${ext}`,
         );
         process.exit(1);
       }
@@ -245,13 +244,13 @@ function getCombinedPluginData(
     } catch (error) {
       console.error(
         `Error: Unable to read theme layout file: ${componentsPath}/layout.${ext}`,
-        error
+        error,
       );
       process.exit(1);
     }
     if (!transformedThemeLayoutFileContent) {
       console.error(
-        `Error: Theme layout file does not contain slots: ${componentsPath}/layout.${ext}`
+        `Error: Theme layout file does not contain slots: ${componentsPath}/layout.${ext}`,
       );
       process.exit(1);
     }
@@ -294,23 +293,23 @@ function getCombinedPluginData(
             frontendPath,
             ext,
             transformedThemeLayoutFileContent,
-            importsCode
+            importsCode,
           );
           updatedCombinedPluginData = combinedPluginData;
           combinedSectionPositionData = _.merge(
             {},
             combinedSectionPositionData,
-            sectionPositionData
+            sectionPositionData,
           );
           combinedSectionPositionData = orderSections(
-            combinedSectionPositionData
+            combinedSectionPositionData,
           );
           try {
             let templateLayoutCode = getLayoutSectionSlotCode();
             updatedThemeLayoutFileContent =
               updatedThemeLayoutFileContent.replace(
                 '{/* children */}',
-                templateLayoutCode
+                templateLayoutCode,
               );
 
             // Define the regular expression to find the content between // content-slot and // end-content-slot
@@ -319,13 +318,13 @@ function getCombinedPluginData(
 
             let updatedContent = themeLayoutFileContent.replace(
               contentSlotRegex,
-              `// content-slot${updatedThemeLayoutFileContent}// end-content-slot`
+              `// content-slot${updatedThemeLayoutFileContent}// end-content-slot`,
             );
 
             if (updatedImportsCode) {
               updatedContent = updatedContent.replace(
                 '// end-import-slot',
-                `${updatedImportsCode}\n// end-import-slot`
+                `${updatedImportsCode}\n// end-import-slot`,
               );
             }
 
@@ -343,7 +342,7 @@ function getCombinedPluginData(
               updatedCombinedPluginData,
               combinedSectionPositionData,
               isConfig,
-              frontendPath
+              frontendPath,
             );
 
             if (
@@ -356,7 +355,7 @@ function getCombinedPluginData(
                 frontendPath,
                 builtData,
                 type,
-                isConfig
+                isConfig,
               );
             }
             if (type === 'theme') {
@@ -365,7 +364,7 @@ function getCombinedPluginData(
                 builtData,
                 type,
                 namespacePath,
-                frontendPath
+                frontendPath,
               );
             }
 
@@ -388,74 +387,92 @@ async function updateCss(
   builtData: BuiltData,
   type: string,
   namespacePath: string,
-  frontendPath?: string
+  frontendPath?: string,
 ) {
-  // update index.css
+  // update css
   let stylesPath = frontendPath
     ? `${frontendPath}/styles`
     : path.join(process.cwd(), `styles`);
-  let indexCssPath = `${stylesPath}/index.css`;
+  let cssPath = `${stylesPath}/globals.css`;
+  let cssData: string;
   try {
-    let cssData: string = await fs.promises.readFile(indexCssPath, 'utf8');
-    if (cssData) {
-      let cssString = ``;
+    cssData = await fs.promises.readFile(cssPath, 'utf8');
+    await processUpdateCss(
+      cssData,
+      builtData,
+      themeOrPlugin,
+      type,
+      stylesPath,
+      namespacePath,
+      cssPath,
+    );
+  } catch (error) {}
+}
 
-      if (type === 'theme' && builtData.plugins) {
-        const newPlugins = themeOrPlugin.plugins || [];
-        const oldPlugins = builtData.plugins || [];
+async function processUpdateCss(
+  cssData,
+  builtData,
+  themeOrPlugin,
+  type,
+  stylesPath,
+  namespacePath,
+  cssPath,
+) {
+  if (cssData) {
+    let cssString = ``;
 
-        // Remove old plugin imports and delete the directories
-        for (let i = 0; i < oldPlugins.length; i++) {
-          const oldPlugin = oldPlugins[i];
+    if (type === 'theme' && builtData.plugins) {
+      const newPlugins = themeOrPlugin.plugins || [];
+      const oldPlugins = builtData.plugins || [];
 
-          if (!newPlugins.includes(oldPlugin)) {
-            // More flexible regex to match possible variations of the import statement
-            const pluginImportRegex = new RegExp(
-              `@import\\s+['"]\\./plugins/${oldPlugin}/index\\.css['"];\\s*`,
-              'g'
-            );
+      // Remove old plugin imports and delete the directories
+      for (let i = 0; i < oldPlugins.length; i++) {
+        const oldPlugin = oldPlugins[i];
+        if (!newPlugins.includes(oldPlugin)) {
+          // More flexible regex to match possible variations of the import statement
+          const pluginImportRegex = new RegExp(
+            `@import\\s+['"]\\./plugins/${oldPlugin}/globals\\.css['"];\\s*`,
+            'g',
+          );
 
-            // Remove the import statement from the CSS data
-            cssData = cssData.replace(pluginImportRegex, '');
+          // Remove the import statement from the CSS data
+          cssData = cssData.replace(pluginImportRegex, '');
 
-            // Delete the plugin directory
-            const pluginDirPath = path.join(stylesPath, `plugins/${oldPlugin}`);
+          // Delete the plugin directory
+          const pluginDirPath = path.join(stylesPath, `plugins/${oldPlugin}`);
 
-            try {
-              await fs.promises.rmdir(pluginDirPath, {recursive: true});
-            } catch (err) {
-              console.error(`Error deleting directory for ${oldPlugin}:`, err);
-            }
+          try {
+            await fs.promises.rmdir(pluginDirPath, {recursive: true});
+          } catch (err) {
+            console.error(`Error deleting directory for ${oldPlugin}:`, err);
           }
-        }
-
-        // Add new plugin imports that don't already exist
-        for (let i = 0; i < newPlugins.length; i++) {
-          const plugin = newPlugins[i];
-          if (!cssData.includes(`@import './plugins/${plugin}/index.css`)) {
-            cssString += `@import './plugins/${plugin}/index.css';\n`;
-          }
-        }
-      } else if (type === 'plugin') {
-        // Handle plugin case as in the original code
-        if (!cssData.includes(`@import '${namespacePath}/index.css`)) {
-          cssString += `@import '${namespacePath}/index.css';\n`;
         }
       }
 
-      cssString += `@import './globals.css';`;
-      cssData = cssData.replace(`@import './globals.css';`, cssString);
-
-      // Write the updated CSS data back to index.css
-      await fsp.writeFile(indexCssPath, cssData);
+      // Add new plugin imports that don't already exist
+      for (let i = 0; i < newPlugins.length; i++) {
+        const plugin = newPlugins[i];
+        if (!cssData.includes(`@import './plugins/${plugin}/globals.css`)) {
+          cssString += `@import './plugins/${plugin}/globals.css';\n`;
+        }
+      }
+    } else if (type === 'plugin') {
+      // Handle plugin case as in the original code
+      if (!cssData.includes(`@import '${namespacePath}/globals.css`)) {
+        cssString += `@import '${namespacePath}/globals.css';\n`;
+      }
     }
-  } catch (error) {
-    console.error('Error reading or writing file:', error);
+
+    // cssString += `@import './globals.css';`;
+    cssData = cssString + cssData; //cssData.replace(`@import './globals.css';`, cssString);
+
+    // Write the updated CSS data back to css path
+    await fsp.writeFile(cssPath, cssData);
   }
 }
 
 const transformSectionPositionData = (
-  inputData: InputData
+  inputData: InputData,
 ): PageSectionData => {
   const outputData: PageSectionData = {};
 
@@ -499,7 +516,7 @@ function getLayoutCode(code: string) {
 
 async function setupPlugins(
   themeOrPlugin: ThemeOrPlugin,
-  apiKey: string
+  apiKey: string,
 ): Promise<{
   successfulSetups: SetupResult[];
   failedSetups: SetupResult[];
@@ -518,7 +535,7 @@ async function setupPlugins(
         return {namespace, data: response.data};
       } catch (error: any) {
         console.error(
-          `Failed to setup plugin for namespace ${namespace}. Are you sure it exists?`
+          `Failed to setup plugin for namespace ${namespace}. Are you sure it exists?`,
         );
 
         if (error.response) {
@@ -555,7 +572,7 @@ async function transformPluginData(
   srcDir: string,
   ext: string,
   transformedThemeLayoutFileContent: string,
-  importsCode: string
+  importsCode: string,
 ): Promise<{
   updatedThemeLayoutFileContent: string;
   updatedImportsCode: string;
@@ -587,27 +604,27 @@ async function transformPluginData(
             setup.namespace,
             data,
             outputPath,
-            srcDir
+            srcDir,
           );
           combinedData = _.mergeWith(
             {},
             combinedData,
             transformedData,
-            customizer
+            customizer,
           );
           if (data.components[`plugins/${setup.namespace}/layout.${ext}`]) {
             let pluginLayoutFileContent: string =
               data.components[`plugins/${setup.namespace}/layout.${ext}`];
 
             const layoutImportsCode = getLayoutImportsCode(
-              pluginLayoutFileContent
+              pluginLayoutFileContent,
             );
             let layoutCode = getLayoutCode(pluginLayoutFileContent) || '';
             if (layoutCode) {
               transformedThemeLayoutFileContent =
                 transformedThemeLayoutFileContent.replace(
                   '{/* children */}',
-                  layoutCode
+                  layoutCode,
                 );
             }
             if (setup.data.layoutData.importsCode) {
@@ -616,7 +633,7 @@ async function transformPluginData(
           }
           // Merge the results of transformSectionPositionData into sectionPositionData
           const transformedSectionPositionData = transformSectionPositionData(
-            data.data[`module-pages.json`]
+            data.data[`module-pages.json`],
           );
           sectionPositionData = {
             ...sectionPositionData,
@@ -624,7 +641,7 @@ async function transformPluginData(
           };
         }
       }
-    })
+    }),
   );
   return {
     updatedThemeLayoutFileContent: transformedThemeLayoutFileContent,
@@ -649,7 +666,7 @@ async function writePluginFiles(
   namespace: string,
   data: any,
   outputPath: string,
-  srcDir: string
+  srcDir: string,
 ): Promise<BuiltData | null> {
   let transformedData: BuiltData;
   const writeTasks: Promise<void>[] = [];
@@ -659,7 +676,7 @@ async function writePluginFiles(
       writeTasks.push(
         fsp
           .mkdir(path.dirname(targetPath), {recursive: true})
-          .then(() => fsp.writeFile(targetPath, content as string))
+          .then(() => fsp.writeFile(targetPath, content as string)),
       );
     }
 
@@ -668,7 +685,7 @@ async function writePluginFiles(
       writeTasks.push(
         fsp
           .mkdir(path.dirname(targetPath), {recursive: true})
-          .then(() => fsp.writeFile(targetPath, content as string))
+          .then(() => fsp.writeFile(targetPath, content as string)),
       );
     }
 
@@ -678,18 +695,23 @@ async function writePluginFiles(
         writeTasks.push(
           fsp
             .mkdir(path.dirname(targetPath), {recursive: true})
-            .then(() => fsp.writeFile(targetPath, content as string))
+            .then(() => fsp.writeFile(targetPath, content as string)),
         );
       }
     }
 
     for (const [filePath, content] of Object.entries(data.lib || {})) {
       const targetPath = path.join(srcDir, 'lib', filePath);
-      writeTasks.push(
-        fsp
-          .mkdir(path.dirname(targetPath), {recursive: true})
-          .then(() => fsp.writeFile(targetPath, content as string))
-      );
+      if (
+        !targetPath.includes('lib/builtjs-utils') &&
+        !targetPath.includes('lib/theme/page')
+      ) {
+        writeTasks.push(
+          fsp
+            .mkdir(path.dirname(targetPath), {recursive: true})
+            .then(() => fsp.writeFile(targetPath, content as string)),
+        );
+      }
     }
 
     for (const [filePath, content] of Object.entries(data.data || {})) {
@@ -697,7 +719,7 @@ async function writePluginFiles(
         srcDir,
         'public/data',
         `plugins/${namespace}`,
-        filePath
+        filePath,
       );
       if (filePath === 'sections.json' || filePath === 'templates.json') {
         // Get the key (sections or templates) dynamically
@@ -714,7 +736,7 @@ async function writePluginFiles(
       writeTasks.push(
         fsp
           .mkdir(path.dirname(targetPath), {recursive: true})
-          .then(() => fsp.writeFile(targetPath, JSON.stringify(content)))
+          .then(() => fsp.writeFile(targetPath, JSON.stringify(content))),
       );
     }
     await Promise.all(writeTasks);
@@ -728,7 +750,7 @@ async function writePluginFiles(
 
 export function transformData(
   data: Record<string, any>,
-  namespace?: string
+  namespace?: string,
 ): BuiltData {
   const transformed: BuiltData = {
     collections: {},
@@ -745,7 +767,7 @@ export function transformData(
   };
   for (const [key, value] of Object.entries(data)) {
     const newKey = toCamelCase(
-      key.split('/').pop()?.replace('.json', '') || ''
+      key.split('/').pop()?.replace('.json', '') || '',
     );
     if (key.startsWith('collections') && value.data) {
       transformed.collections[newKey] = value.data;
@@ -820,7 +842,7 @@ async function createMergedData(
   pluginsData: any,
   pageSections: any,
   isConfig?: boolean,
-  frontendPath?: string
+  frontendPath?: string,
 ): Promise<BuiltData> {
   return new Promise(async resolve => {
     const pagesPath = `${frontendPath ? `${frontendPath}/` : ''}pages`;
@@ -833,7 +855,7 @@ async function createMergedData(
       // Handle the merging of pages separately
       updatedPages = pluginsData.pages.map((pluginPage: Page) => {
         const newPage = themeData.pages.find(
-          (page: Page) => page.name === pluginPage.name
+          (page: Page) => page.name === pluginPage.name,
         );
         const positions = pageSections[pluginPage.name] || {};
         const demoSections = Object.keys(positions)
@@ -865,16 +887,16 @@ async function createMergedData(
     const collectionsDir = path.join(
       isConfig ? 'config' : '',
       'public/data',
-      'collections'
+      'collections',
     );
 
     const collectionFiles = await fsp.readdir(collectionsDir);
     for (const file of collectionFiles) {
       const collectionData = await readJsonFile(
-        path.join(collectionsDir, file)
+        path.join(collectionsDir, file),
       );
       const collectionName = _.camelCase(
-        path.basename(file, path.extname(file))
+        path.basename(file, path.extname(file)),
       );
       const dataArray = collectionData.data || collectionData;
 
@@ -884,12 +906,12 @@ async function createMergedData(
 
       const existingIds = new Set(
         mergedData.collections[collectionName].map(
-          (item: {_id: string}) => item._id
-        )
+          (item: {_id: string}) => item._id,
+        ),
       );
 
       const uniqueDataArray = dataArray.filter(
-        (item: {_id: string}) => !existingIds.has(item._id)
+        (item: {_id: string}) => !existingIds.has(item._id),
       );
 
       mergedData.collections[collectionName] =
@@ -903,7 +925,7 @@ async function createMergedData(
     await fsp.writeFile(
       outputPath,
       JSON.stringify(mergedData, null, 2),
-      'utf8'
+      'utf8',
     );
     return resolve(mergedData);
   });
@@ -956,11 +978,10 @@ function getPageCode(pageName: string): string {
 
 async function createPageFiles(
   pagesPath: string,
-  pages: Array<{name: string; title: string; contentType?: {name: string}}>
+  pages: Array<{name: string; title: string; contentType?: {name: string}}>,
 ) {
   for (const page of pages) {
     const {name, contentType} = page;
-
     let filePath: string;
     let fileContent: string;
 
@@ -1004,22 +1025,20 @@ const orderSections = (sections: Sections): Sections => {
 
 async function getThemeData(
   type: string,
-  frontendPath?: string
+  frontendPath?: string,
 ): Promise<BuiltData> {
   const dataPath = `${frontendPath ? `${frontendPath}/` : ''}public/data`;
   // Read data from other files
   const pagesData = await readJsonFile(path.join(dataPath, 'pages.json'));
   const contentTypesData = await readJsonFile(
-    path.join(dataPath, 'schemas/content-types.json')
+    path.join(dataPath, 'schemas/content-types.json'),
   );
   const sectionsData = await readJsonFile(path.join(dataPath, 'sections.json'));
   const templatesData = await readJsonFile(
-    path.join(dataPath, 'templates.json')
+    path.join(dataPath, 'templates.json'),
   );
   let globalData = null;
-  // if (type === 'theme') {
   globalData = await readJsonFile(path.join(dataPath, 'global.json'));
-  // }
 
   const layoutData = await readJsonFile(path.join(dataPath, 'layout.json'));
 
@@ -1055,7 +1074,7 @@ async function readJsonFile(filePath: string): Promise<any> {
 function updatePages(
   themeData: ThemeData,
   mergedPages: Page[],
-  pageSections: Record<string, number>
+  pageSections: Record<string, number>,
 ): Page[] {
   if (!mergedPages) {
     return themeData.pages.map((page: Page) => {
@@ -1066,7 +1085,7 @@ function updatePages(
   return themeData.pages.reduce(
     (acc, page) => {
       const pageExists = mergedPages.some(
-        mergedPage => mergedPage.name === page.name
+        mergedPage => mergedPage.name === page.name,
       );
       if (!pageExists) {
         updatePageDemoSections(page, pageSections);
@@ -1075,13 +1094,13 @@ function updatePages(
 
       return acc;
     },
-    [...mergedPages]
+    [...mergedPages],
   );
 }
 
 function updatePageDemoSections(
   page: Page,
-  pageSections: Record<string, number>
+  pageSections: Record<string, number>,
 ) {
   if (!page.demoSections || page.demoSections.length === 0) {
     const positions = pageSections[page.name] || {};

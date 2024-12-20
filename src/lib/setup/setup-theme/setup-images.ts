@@ -228,6 +228,72 @@ export async function updateImagesForThemeOrPlugin(
   }
 }
 
+// export async function updateImages(
+//   builtData: BuiltData,
+//   projectRoot: string,
+//   namespace?: string,
+//   isPluginForTheme?: boolean
+// ) {
+//   let pluginPath = '';
+//   if (isPluginForTheme) {
+//     pluginPath = `/plugins/${namespace}`;
+//   }
+//   // Define paths to the schema and data files
+//   const sectionsSchemaPath = path.join(
+//     projectRoot,
+//     `public/data${pluginPath}/schemas/sections.json`
+//   );
+//   const contentTypesSchemaPath = path.join(
+//     projectRoot,
+//     `public/data${pluginPath}/schemas/content-types.json`
+//   );
+//   const elementsSchemaPath = path.join(
+//     projectRoot,
+//     `public/data${pluginPath}/schemas/elements.json`
+//   );
+
+//   let globalSchema = null;
+//   try {
+//     const globalSchemaPath = path.join(
+//       projectRoot,
+//       `public/data${pluginPath}/schemas/global.json`
+//     );
+//     globalSchema = (await readJsonFile(globalSchemaPath)) as Schema;
+//   } catch (error) {}
+//   const sectionsSchema = (await readJsonFile(sectionsSchemaPath)) as Schema;
+//   const contentTypesSchema = (await readJsonFile(
+//     contentTypesSchemaPath
+//   )) as Schema;
+//   const elementsSchema = (await readJsonFile(elementsSchemaPath)) as Schema;
+//   let globalSchemaImageFields = null;
+//   // Find image fields
+//   if (globalSchema && globalSchema.global) {
+//     globalSchemaImageFields = findImageFieldsInGlobal(globalSchema.global);
+//   }
+
+//   const sectionSchemaImageFields = findImageFieldsInSections(
+//     sectionsSchema.sections
+//   );
+//   const contentTypeSchemaImageFields = findImageFieldsInContentTypes(
+//     contentTypesSchema.contentTypes
+//   );
+//   const elementSchemaImageFields = findImageFieldsInElements(
+//     elementsSchema.elements
+//   );
+
+//   // Get image data
+//   const images = getImageDataFromBuilt(
+//     builtData,
+//     globalSchemaImageFields,
+//     sectionSchemaImageFields,
+//     contentTypeSchemaImageFields,
+//     elementSchemaImageFields
+//   );
+
+//   // Download and save images
+//   await downloadAndSaveImages(images, projectRoot);
+// }
+
 export async function updateImages(
   builtData: BuiltData,
   projectRoot: string,
@@ -238,6 +304,7 @@ export async function updateImages(
   if (isPluginForTheme) {
     pluginPath = `/plugins/${namespace}`;
   }
+
   // Define paths to the schema and data files
   const sectionsSchemaPath = path.join(
     projectRoot,
@@ -251,23 +318,49 @@ export async function updateImages(
     projectRoot,
     `public/data${pluginPath}/schemas/elements.json`
   );
+  const globalSchemaPath = path.join(
+    projectRoot,
+    `public/data${pluginPath}/schemas/global.json`
+  );
 
-  let globalSchema = null;
+  // Required schemas: sections and contentTypes
+  let sectionsSchema: Schema;
+  let contentTypesSchema: Schema;
+
   try {
-    const globalSchemaPath = path.join(
-      projectRoot,
-      `public/data${pluginPath}/schemas/global.json`
+    sectionsSchema = (await readJsonFile(sectionsSchemaPath)) as Schema;
+  } catch (error) {
+    throw new Error(`Failed to load sections schema from ${sectionsSchemaPath}`);
+  }
+
+  try {
+    contentTypesSchema = (await readJsonFile(
+      contentTypesSchemaPath
+    )) as Schema;
+  } catch (error) {
+    throw new Error(
+      `Failed to load content types schema from ${contentTypesSchemaPath}`
     );
+  }
+
+  // Optional schemas: elements and global
+  let elementsSchema: Schema | null = null;
+  try {
+    elementsSchema = (await readJsonFile(elementsSchemaPath)) as Schema;
+  } catch (error) {
+    // do nothing, elements are optional
+  }
+
+  let globalSchema: Schema | null = null;
+  try {
     globalSchema = (await readJsonFile(globalSchemaPath)) as Schema;
-  } catch (error) {}
-  const sectionsSchema = (await readJsonFile(sectionsSchemaPath)) as Schema;
-  const contentTypesSchema = (await readJsonFile(
-    contentTypesSchemaPath
-  )) as Schema;
-  const elementsSchema = (await readJsonFile(elementsSchemaPath)) as Schema;
-  let globalSchemaImageFields = null;
+  } catch (error) {
+    // do nothing, global is optional
+  }
+
   // Find image fields
-  if (globalSchema && globalSchema.global) {
+  let globalSchemaImageFields: string[] | null = null;
+  if (globalSchema?.global) {
     globalSchemaImageFields = findImageFieldsInGlobal(globalSchema.global);
   }
 
@@ -277,9 +370,9 @@ export async function updateImages(
   const contentTypeSchemaImageFields = findImageFieldsInContentTypes(
     contentTypesSchema.contentTypes
   );
-  const elementSchemaImageFields = findImageFieldsInElements(
-    elementsSchema.elements
-  );
+  const elementSchemaImageFields = elementsSchema?.elements
+    ? findImageFieldsInElements(elementsSchema.elements)
+    : {};
 
   // Get image data
   const images = getImageDataFromBuilt(
@@ -293,3 +386,4 @@ export async function updateImages(
   // Download and save images
   await downloadAndSaveImages(images, projectRoot);
 }
+
