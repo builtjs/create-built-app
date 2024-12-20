@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer';
 import kebabCase from 'kebab-case';
 import path from 'path';
 import { findNextPort } from './port-utils.js';
-import { Page } from '../types/index.js';
+import { Page } from '../../interfaces.js';
 
 export async function takeScreenshots(page: Page, customPort?: string | number): Promise<void> {
   const browser = await puppeteer.launch();

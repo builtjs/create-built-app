@@ -36,6 +36,7 @@ export interface CombinedData {
     name: string;
     title: string;
     description: string;
+    type: string;
     templates: string[];
     defaultTemplate: {name: string};
     data: Record<string, string>;

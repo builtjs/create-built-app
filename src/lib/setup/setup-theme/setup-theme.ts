@@ -10,12 +10,7 @@ import * as _ from 'lodash';
 import {mergeData} from '../../../lib/setup/setup-theme/merge-data';
 import {updateImagesForThemeOrPlugin} from '../../../lib/setup/setup-theme/setup-images';
 import {getCombinedData} from '../../../commands/publish';
-import {
-  BuiltData,
-  Page,
-  Section,
-  ThemeOrPlugin,
-} from '../../../interfaces';
+import {BuiltData, Page, Section, ThemeOrPlugin} from '../../../interfaces';
 
 interface ThemeData {
   pages: Page[];
@@ -393,7 +388,7 @@ async function updateCss(
   let stylesPath = frontendPath
     ? `${frontendPath}/styles`
     : path.join(process.cwd(), `styles`);
-  let cssPath = `${stylesPath}/globals.css`;
+  let cssPath: string = `${stylesPath}/globals.css`;
   let cssData: string;
   try {
     cssData = await fs.promises.readFile(cssPath, 'utf8');
@@ -410,13 +405,13 @@ async function updateCss(
 }
 
 async function processUpdateCss(
-  cssData,
-  builtData,
-  themeOrPlugin,
-  type,
-  stylesPath,
-  namespacePath,
-  cssPath,
+  cssData: string,
+  builtData: BuiltData,
+  themeOrPlugin: ThemeOrPlugin,
+  type: string,
+  stylesPath: string,
+  namespacePath: string,
+  cssPath: string,
 ) {
   if (cssData) {
     let cssString = ``;
@@ -849,7 +844,7 @@ async function createMergedData(
     const themeData = await getThemeData(type, frontendPath);
     themeData.plugins =
       type === 'theme' && themeOrPlugin.plugins ? themeOrPlugin.plugins : [];
-    const mergedData: BuiltData = mergeData(themeData, pluginsData);
+    const mergedData: BuiltData = mergeData(pluginsData, themeData);
     let updatedPages = themeData.pages;
     if (Object.keys(pluginsData).length > 0) {
       // Handle the merging of pages separately
