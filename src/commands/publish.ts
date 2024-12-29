@@ -93,6 +93,7 @@ function collectAllConfigData(data: CombinedData, srcDir: string) {
   const files = [
     {path: 'tailwind.config.js', required: true},
     {path: 'postcss.config.js', required: true},
+    {path: 'next.config.js', required: true},
     {path: 'jsconfig.site.json', required: false},
     {path: '.env.example', required: false},
     {path: 'README.site.md', required: false},

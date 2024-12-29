@@ -1,23 +1,17 @@
 import puppeteer from 'puppeteer';
 import kebabCase from 'kebab-case';
 import path from 'path';
-import {findNextPort} from './port-utils.js';
-// import { Page, Section } from '../types/index.js';
-import {initCloudinary, uploadToCloudinary} from './cloudinary-utils.js';
+import {uploadToCloudinary} from './cloudinary-utils.js';
 import {updateTemplateImage} from './templates-utils.js';
 import {
   ModulePage,
   SectionsData,
   PagesData,
   Section,
-  Page,
   ThemeOrPlugin,
 } from '../interfaces.js';
 import pluralize from 'pluralize';
 import {readCollectionFile} from './file-utils.js';
-// import { SCREEN_SIZES } from '../constants/screen-sizes.js';
-// import { createSpinner, createProgressBar, symbols } from './cli-utils.js';
-// import chalk from 'chalk';
 
 const LAPTOP_SCREEN_WIDTH = 1366;
 const DEFAULT_PORT = 3000;
@@ -49,8 +43,7 @@ export async function takeScreenshots(
         sectionsData.sections,
         themeOrPlugin,
         type,
-        hasCloudinary,
-        customPort,
+        hasCloudinary
       );
     }
   } else {
@@ -61,8 +54,7 @@ export async function takeScreenshots(
       sectionsData.sections,
       themeOrPlugin,
       type,
-      hasCloudinary,
-      customPort,
+      hasCloudinary
     );
   }
 }
@@ -73,12 +65,9 @@ async function processScreenshots(
   sections: Section[],
   themeOrPlugin: ThemeOrPlugin,
   type: string,
-  hasCloudinary: boolean,
-  customPort?: string | number,
+  hasCloudinary: boolean
 ) {
   const browser = await puppeteer.launch({headless: 'new'});
-  // browserSpinner.succeed('Browser launched');
-
   try {
     const tab = await browser.newPage();
     // Set viewport width to laptop size, height will adjust to content
@@ -86,37 +75,20 @@ async function processScreenshots(
       width: LAPTOP_SCREEN_WIDTH,
       height: 1,
     });
-
-    // const loadingSpinner = createSpinner(`Loading page ${pageUrl}`).start();
     await tab.goto(pageUrl, {waitUntil: 'networkidle0'});
-    // loadingSpinner.succeed(`Page loaded: ${pageUrl}`);
-    // Check if Cloudinary credentials exist
-    // const cloudinarySpinner = createSpinner('Checking Cloudinary configuration...').start();
-
-    // if (hasCloudinary) {
-    //   cloudinarySpinner.succeed('Cloudinary configured successfully');
-    // } else {
-    //   cloudinarySpinner.warn('Cloudinary not configured - skipping image uploads');
-    // }
-    // const progressBar = createProgressBar();
-    // progressBar.start(page.sections.length, 0);
 
     for (const pageSection of modulePage.sections) {
       // Find the full section data from sections.json
       const section = sections.find(s => s.name === pageSection.name);
       if (!section) {
-        // console.log(`\n${symbols.warning} Section "${pageSection.name}" not found in sections.json`);
-        // progressBar.increment();
         continue;
       }
 
       const element = await tab.$(`#${section.defaultTemplate.name}`);
       if (!element) {
-        // console.log(`\n${symbols.warning} Section "${section.name}" (id: ${section.id}) not found on page "${page.name}"`);
         console.log(
           `\nSection "${section.name}" (id: ${section.defaultTemplate.name}) not found on page "${pageUrl}"`,
         );
-        // progressBar.increment();
         continue;
       }
       console.log(
@@ -148,17 +120,11 @@ async function processScreenshots(
             `Uploaded to Cloudinary: ${section.defaultTemplate.name}`,
           );
         } catch (error) {
-          // console.log(`\n${symbols.error} ${chalk.red(`Failed to upload "${section.name}" to Cloudinary: ${error instanceof Error ? error.message : String(error)}`)}`);
+          console.log(`Failed to upload "${section.name}" to Cloudinary: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
-
-      // progressBar.increment();
     }
-
-    // progressBar.stop();
   } finally {
-    // const closingSpinner = createSpinner('Closing browser...').start();
     await browser.close();
-    // closingSpinner.succeed('Browser closed');
   }
 }

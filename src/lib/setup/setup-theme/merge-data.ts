@@ -16,15 +16,13 @@ export type Collection = {
   [key: string]: any[];
 };
 
-function mergeArraysDistinct<T extends {name: string; namespace?: string}>(
+function mergeArraysDistinct<T extends {name: string; slug?: string; namespace?: string}>(
   arr1: T[],
   arr2: T[]
 ): T[] {
   const merged = [...arr1];
-
   arr2.forEach(item2 => {
-    const index = merged.findIndex(item1 => item1.name === item2.name);
-
+    const index = merged.findIndex(item1 => ((item1.name === item2.name) || (item1.slug && (item1.slug === item2.slug))));
     if (index === -1) {
       // No item with the same name exists in arr1, so push item2 directly
       merged.push(item2);

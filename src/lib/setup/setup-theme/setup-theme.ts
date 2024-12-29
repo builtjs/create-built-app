@@ -88,10 +88,6 @@ export async function update(
     let combinedSectionPositionData: PageSectionData = {};
 
     let updatedCombinedPluginData = {};
-    const builtDataPath = path.join(
-      frontendPath,
-      `public/data/_built/data.json`,
-    );
     if (
       themeOrPlugin &&
       themeOrPlugin.plugins &&
@@ -630,10 +626,11 @@ async function transformPluginData(
           const transformedSectionPositionData = transformSectionPositionData(
             data.data[`module-pages.json`],
           );
-          sectionPositionData = {
-            ...sectionPositionData,
-            ...transformedSectionPositionData,
-          };
+          sectionPositionData = _.merge(
+            {},
+            sectionPositionData,
+            transformedSectionPositionData,
+          );
         }
       }
     }),
@@ -667,6 +664,10 @@ async function writePluginFiles(
   const writeTasks: Promise<void>[] = [];
   try {
     for (const [filePath, content] of Object.entries(data.components || {})) {
+      // Ignore paths starting with 'components/ui'
+      if (filePath.startsWith('ui/')) {
+        continue;
+      }
       const targetPath = path.join(srcDir, 'components', filePath);
       writeTasks.push(
         fsp
@@ -807,6 +808,12 @@ function getLayoutImportsCode(code: string) {
 
 const customizer = (objValue: any, srcValue: any, key: string) => {
   if (_.isArray(objValue)) {
+    // If the key is 'collections', ensure unique slugs for the merged arrays
+    if (objValue[0] && objValue[0].slug) {
+      const mergedArray = objValue.concat(srcValue);
+      const uniqueBySlug = _.uniqBy(mergedArray, 'slug');
+      return uniqueBySlug;
+    }
     return objValue.concat(srcValue);
   }
 
@@ -877,7 +884,6 @@ async function createMergedData(
     if (!mergedData.collections) {
       mergedData.collections = {};
     }
-
     // Read collection data and merge
     const collectionsDir = path.join(
       isConfig ? 'config' : '',
@@ -901,14 +907,12 @@ async function createMergedData(
 
       const existingIds = new Set(
         mergedData.collections[collectionName].map(
-          (item: {_id: string}) => item._id,
+          (item: {slug: string}) => item.slug,
         ),
       );
-
       const uniqueDataArray = dataArray.filter(
-        (item: {_id: string}) => !existingIds.has(item._id),
+        (item: {slug: string}) => !existingIds.has(item.slug),
       );
-
       mergedData.collections[collectionName] =
         mergedData.collections[collectionName].concat(uniqueDataArray);
     }
@@ -939,9 +943,9 @@ function getArticlePageCode(pageName: string, contentTypeName: string): string {
     return {
       paths:
         entryData.entries.map(
-          (entry:any) => \`/${contentTypeName}/\${entry.slug}\`
+          (entry:any) => \`/${camelCaseToDash(contentTypeName)}/\${entry.slug}\`
         ) ?? [],
-      fallback: true,
+      fallback: false,
     };
   };
   
@@ -971,6 +975,10 @@ function getPageCode(pageName: string): string {
   }`;
 }
 
+function camelCaseToDash(str: string) {
+  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
 async function createPageFiles(
   pagesPath: string,
   pages: Array<{name: string; title: string; contentType?: {name: string}}>,
@@ -982,7 +990,11 @@ async function createPageFiles(
 
     if (contentType) {
       // Content type exists, create dynamic page under [slug] folder
-      filePath = path.join(pagesPath, contentType.name, '[slug].tsx');
+      filePath = path.join(
+        pagesPath,
+        camelCaseToDash(contentType.name),
+        '[slug].tsx',
+      );
       fileContent = getArticlePageCode(page.name, contentType.name);
     } else {
       // No content type, create file at the root of pages

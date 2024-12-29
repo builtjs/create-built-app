@@ -11,7 +11,7 @@ import {
 export async function installFrontendSite(
   frontendPath: string,
   rootDir: string,
-  cms: string
+  cms: string,
 ) {
   return new Promise<void>(async (resolve, reject) => {
     console.log('Installing site...');
@@ -29,7 +29,7 @@ export async function installFrontendSite(
       copyRecursiveSync(`${frontendConfigPath}/.env`, `${frontendPath}/.env`);
     } catch (error) {
       console.error(
-        `No "${frontendConfigPath}/.env" directory found. Skipping...`
+        `No "${frontendConfigPath}/.env" directory found. Skipping...`,
       );
     }
 
@@ -43,7 +43,7 @@ export async function installFrontendSite(
       copyRecursiveSync(`${frontendConfigPath}/setup`, `${srcPath}/setup`);
     } catch (error) {
       console.error(
-        'An error occurred when moving the config/setup directory to the frontend project. Are you sure it exists?'
+        'An error occurred when moving the config/setup directory to the frontend project. Are you sure it exists?',
       );
     }
 
@@ -77,7 +77,6 @@ export async function installFrontendSite(
       fs.rmSync(`${srcPath}/pages`, {recursive: true, force: true});
       move(`${frontendConfigPath}/pages`, `${srcPath}/pages`);
       if (appData) {
-        appData = appData.replace(`globals.css`, `index.css`);
         fs.writeFile(appPath, appData, function (err) {
           if (err) return console.log(err);
         });
@@ -106,45 +105,45 @@ function moveCommon(src: string, dest: string) {
       } catch (error) {
         // do nothing
       }
-      let tailwindConfigPath = '';
+    }
+    let tailwindConfigPath = '';
+    try {
+      //-> Moving tailwind.config.js to frontend project
       try {
-        //-> Moving tailwind.config.js to frontend project
+        fs.rmSync(`${dest}/tailwind.config.ts`);
+      } catch (error) {
+        // do nothing
+      }
+      copyRecursiveSync(
+        `${src}/tailwind.config.js`,
+        `${dest}/tailwind.config.js`,
+      );
+      tailwindConfigPath = `${dest}/tailwind.config.js`;
+    } catch (error) {
+      try {
         try {
-          fs.rmSync(`${dest}/tailwind.config.ts`);
+          fs.rmSync(`${dest}/tailwind.config.js`);
         } catch (error) {
           // do nothing
         }
-        copyRecursiveSync(
-          `${src}/tailwind.config.js`,
-          `${dest}/tailwind.config.js`
-        );
-        tailwindConfigPath = `${dest}/tailwind.config.js`;
-      } catch (error) {
-        try {
-          try {
-            fs.rmSync(`${dest}/tailwind.config.js`);
-          } catch (error) {
-            // do nothing
-          }
 
-          //-> Moving tailwind.config.ts to frontend project
-          copyRecursiveSync(
-            `${src}/tailwind.config.ts`,
-            `${dest}/tailwind.config.ts`
-          );
-          tailwindConfigPath = `${dest}/tailwind.config.ts`;
-        } catch (error) {}
-      }
-      try {
-        let tailwindConfigData = await fs.readFileSync(
-          tailwindConfigPath,
-          'utf-8'
+        //-> Moving tailwind.config.ts to frontend project
+        copyRecursiveSync(
+          `${src}/tailwind.config.ts`,
+          `${dest}/tailwind.config.ts`,
         );
-        tailwindConfigData = tailwindConfigData.replace(/src\//g, '');
-        await fs.writeFileSync(tailwindConfigPath, tailwindConfigData);
-      } catch (error) {
-        console.error('Error processing the Tailwind config file:', error);
-      }
+        tailwindConfigPath = `${dest}/tailwind.config.ts`;
+      } catch (error) {}
+    }
+    try {
+      let tailwindConfigData = await fs.readFileSync(
+        tailwindConfigPath,
+        'utf-8',
+      );
+      tailwindConfigData = tailwindConfigData.replace(/src\//g, '');
+      await fs.writeFileSync(tailwindConfigPath, tailwindConfigData);
+    } catch (error) {
+      console.error('Error processing the Tailwind config file:', error);
     }
 
     try {
@@ -152,92 +151,19 @@ function moveCommon(src: string, dest: string) {
     } catch (error) {}
 
     try {
-      fs.rmSync(`${dest}/postcss.config.mjs`);
-    } catch (error) {
-      try {
-        fs.rmSync(`${dest}/postcss.config.ts`);
-      } catch (error) {
-        try {
-          fs.rmSync(`${dest}/postcss.config.js`);
-        } catch (error) {
-          //do nothing
-        }
-      }
-    }
-
-    try {
-      fs.rmSync(`${dest}/postcss.config.mjs`);
-    } catch (error) {
-      try {
-        fs.rmSync(`${dest}/postcss.config.ts`);
-      } catch (error) {
-        try {
-          fs.rmSync(`${dest}/postcss.config.js`);
-        } catch (error) {
-          //do nothing
-        }
-      }
-    }
-
-    try {
       //-> Moving postcss.config.js to frontend project
       copyRecursiveSync(
         `${src}/postcss.config.js`,
-        `${dest}/postcss.config.js`
+        `${dest}/postcss.config.js`,
       );
     } catch (error) {
       try {
         //-> Moving postcss.config.ts to frontend project
         copyRecursiveSync(
           `${src}/postcss.config.ts`,
-          `${dest}/postcss.config.ts`
+          `${dest}/postcss.config.ts`,
         );
       } catch (error) {}
-    }
-
-    try {
-      fs.rmSync(`${dest}/postcss.config.mjs`);
-    } catch (error) {
-      try {
-        fs.rmSync(`${dest}/postcss.config.ts`);
-      } catch (error) {
-        try {
-          fs.rmSync(`${dest}/postcss.config.js`);
-        } catch (error) {
-          //do nothing
-        }
-      }
-    }
-
-    try {
-      //-> Moving postcss.config.js to frontend project
-      copyRecursiveSync(
-        `${src}/postcss.config.js`,
-        `${dest}/postcss.config.js`
-      );
-    } catch (error) {
-      try {
-        //-> Moving postcss.config.ts to frontend project
-        copyRecursiveSync(
-          `${src}/postcss.config.ts`,
-          `${dest}/postcss.config.ts`
-        );
-      } catch (error) {}
-    }
-
-    try {
-      //-> Moving builtjs-utils.js file to frontend project
-      copyRecursiveSync(`${src}/builtjs-utils.js`, `${dest}/builtjs-utils.js`);
-    } catch (error) {
-      try {
-        //-> Moving builtjs-utils.ts file to frontend project
-        copyRecursiveSync(
-          `${src}/builtjs-utils.ts`,
-          `${dest}/builtjs-utils.ts`
-        );
-      } catch (error) {
-        console.error('No "builtjs-utils" file found. Skipping...');
-      }
     }
 
     try {
@@ -253,6 +179,7 @@ function moveCommon(src: string, dest: string) {
         }
       }
     }
+
     try {
       //-> Moving next.config.js file to frontend project
       copyRecursiveSync(`${src}/next.config.js`, `${dest}/next.config.js`);
@@ -261,7 +188,7 @@ function moveCommon(src: string, dest: string) {
         //-> Moving next.config.ts file to frontend project
         copyRecursiveSync(`${src}/next.config.ts`, `${dest}/next.config.ts`);
       } catch (error) {
-        console.error('No "next.config" file found. Skipping...');
+        // do nothing
       }
     }
 
@@ -275,7 +202,7 @@ export async function installFrontendThemeOrPlugin(
   frontendPath: string,
   rootDir: string,
   type: string,
-  themeOrPlugin: any
+  themeOrPlugin: any,
 ) {
   let apiKey = await getApiKey();
   if (!apiKey) {
@@ -307,7 +234,7 @@ export async function installFrontendThemeOrPlugin(
   let namespace;
   try {
     const appData: any = fs.readFileSync(
-      `${Constants.CONFIG_PREFIX}/${type}.json`
+      `${Constants.CONFIG_PREFIX}/${type}.json`,
     );
     const app = JSON.parse(appData)[type];
     if (app.namespace) {
@@ -346,11 +273,10 @@ async function movePages(srcPath: string, type: string, namespace: string) {
   fs.rmSync(`${srcPath}/pages`, {recursive: true, force: true});
   move(Constants.THEME_PAGES_DIR, `${srcPath}/pages`);
   if (appData) {
-    let cssString = `@/styles/index.css`;
     if (type === Constants.TYPES.plugin && namespace) {
-      cssString = `@/styles/${type}s/${namespace}/index.css`;
+      let cssString = `@/styles/${type}s/${namespace}/globals.css`;
+      appData = appData.replace(`@/styles/globals.css`, cssString);
     }
-    appData = appData.replace(`@/styles/globals.css`, cssString);
     await fs.promises.writeFile(appPath, appData);
   }
 }
