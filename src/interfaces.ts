@@ -85,9 +85,9 @@ export interface CombinedData {
     title: string;
     category: string;
     description: string;
-    repoUrl: string;
-    demoUrl: string;
-    imageUrl: string;
+    repoUrl?: string;
+    demoUrl?: string;
+    imageUrl?: string;
   };
 
   export type Layout = {

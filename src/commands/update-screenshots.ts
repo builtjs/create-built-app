@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import { readDataFile, readModulePagesFile, readPagesFile, readSectionsFile } from '../utils/file-utils';
 import { takeScreenshots } from '../utils/screenshot-utils';
 import { ensureDirectoryExists } from '../utils/file-utils';
@@ -5,7 +6,7 @@ import { ThemeOrPlugin } from '../interfaces';
 import { initCloudinary } from '../utils/cloudinary-utils';
 
 export async function updateScreenshots(themeOrPlugin: ThemeOrPlugin, type: string, customPort?: string | number): Promise<void> {
-  console.log(`📸 Updating screenshots...\n`);
+  console.log(chalk.blue(`📸 Updating screenshots...\n`));
   try {
     // Read both data files
     const [modulePagesData, pagesData, sectionsData] = await Promise.all([

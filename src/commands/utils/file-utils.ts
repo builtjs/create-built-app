@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { ProjectData } from '../../types/index.js';
+import { ProjectData } from '../../types';
 
 export async function readDataFile(): Promise<ProjectData> {
   try {

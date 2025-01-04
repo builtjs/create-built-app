@@ -1,0 +1,149 @@
+import OpenAI from 'openai';
+import { getProjectEnv } from './project-env';
+import { createComponentPrompt } from './prompts';
+import { TemplateMetadata } from '../../types';
+import { Section } from '../../interfaces';
+
+export async function createOpenAIClient(projectRoot: string): Promise<OpenAI> {
+  const { apiKey } = await getProjectEnv(projectRoot);
+  return new OpenAI({ apiKey });
+}
+
+export async function generateComponent(
+  openai: OpenAI, 
+  projectRoot: string,
+  section: Section, 
+  customPrompt?: string,
+  designSystem: 'basic' | 'shadcn' = 'basic'
+): Promise<TemplateMetadata> {
+  const { model } = await getProjectEnv(projectRoot);
+  const prompt = createComponentPrompt(section, customPrompt, designSystem);
+
+  const completion = await openai.chat.completions.create({
+    model,
+    messages: [{ 
+      role: "user", 
+      content: prompt 
+    }],
+    temperature: 0.7,
+  });
+
+  const content = completion.choices[0].message.content;
+  if (!content) {
+    throw new Error('Empty response from OpenAI');
+  }
+
+  try {
+    // Clean and extract JSON
+    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+    if (!jsonMatch) {
+      throw new Error('No JSON block found in response');
+    }
+
+    const jsonStr = jsonMatch[1].trim();
+    const result = JSON.parse(jsonStr);
+
+    // Validate response structure
+    if (!result.metadata?.name || !result.metadata?.category || !result.code) {
+      throw new Error('Invalid response structure');
+    }
+
+    // Add timestamp to name
+    return {
+      ...result.metadata,
+      name: `${result.metadata.name}${Date.now()}`,
+      code: result.code
+    };
+  } catch (error) {
+    console.error('Parse Error:', error);
+    console.error('Raw Response:', content);
+    throw new Error('Failed to parse OpenAI response');
+  }
+}
+
+// export async function generateComponent(
+//   openai: OpenAI, 
+//   projectRoot: string,
+//   section: Section, 
+//   customPrompt?: string
+// ): Promise<TemplateMetadata> {
+//   const { model } = await getProjectEnv(projectRoot);
+//   const prompt = createComponentPrompt(section, customPrompt);
+
+//   const completion = await openai.chat.completions.create({
+//     model,
+//     messages: [{ 
+//       role: "user", 
+//       content: prompt 
+//     }],
+//     temperature: 0.7,
+//   });
+
+//   const content = completion.choices[0].message.content;
+//   if (!content) {
+//     throw new Error('Empty response from OpenAI');
+//   }
+
+//   try {
+//     // Clean and extract JSON
+//     const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+//     if (!jsonMatch) {
+//       throw new Error('No JSON block found in response');
+//     }
+
+//     const jsonStr = jsonMatch[1].trim();
+//     const result = JSON.parse(jsonStr);
+
+//     // Validate response structure
+//     if (!result.metadata?.name || !result.metadata?.category || !result.code) {
+//       throw new Error('Invalid response structure');
+//     }
+
+//     // Add timestamp to name
+//     return {
+//       ...result.metadata,
+//       name: `${result.metadata.name}${Date.now()}`,
+//       code: result.code
+//     };
+//   } catch (error) {
+//     console.error('Parse Error:', error);
+//     console.error('Raw Response:', content);
+//     throw new Error('Failed to parse OpenAI response');
+//   }
+// }
+
+// export async function createOpenAIClient(projectRoot: string): Promise<OpenAI> {
+//   const { apiKey } = await getProjectEnv(projectRoot);
+//   return new OpenAI({ apiKey });
+// }
+
+// export async function generateComponent(
+//   openai: OpenAI, 
+//   projectRoot: string,
+//   section: Section, 
+//   customPrompt?: string
+// ): Promise<TemplateMetadata> {
+//   const { model } = await getProjectEnv(projectRoot);
+//   const prompt = createComponentPrompt(section, customPrompt);
+
+//   const completion = await openai.chat.completions.create({
+//     model,
+//     messages: [{ role: "user", content: prompt }],
+//   });
+
+//   const content = completion.choices[0].message.content;
+//   if (!content) {
+//     throw new Error('OpenAI returned empty response');
+//   }
+
+//   try {
+//     const response = JSON.parse(content);
+//     return {
+//       ...response.metadata,
+//       name: `${response.metadata.name}${Date.now()}`,
+//       code: response.code
+//     };
+//   } catch (error) {
+//     throw new Error('Failed to parse OpenAI response as JSON. Please ensure your OpenAI model is generating valid JSON responses.');
+//   }
+// }

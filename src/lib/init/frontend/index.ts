@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import * as fs from 'fs';
 import {copyRecursiveSync, exists} from '../../../utils';
 import {Constants} from '../../../constants';
@@ -14,8 +15,7 @@ export async function installFrontendSite(
   cms: string,
 ) {
   return new Promise<void>(async (resolve, reject) => {
-    console.log('Installing site...');
-
+    console.log(chalk.blue(`Installing site...`));
     const srcPath = `${frontendPath}${rootDir}`;
     let frontendConfigPath = Constants.SITE_FRONTEND_DIR;
 
@@ -230,7 +230,7 @@ export async function installFrontendThemeOrPlugin(
     console.error('Error: It looks like this not a theme or plugin.');
     process.exit(1);
   }
-  console.log(`Installing ${type}...`);
+  console.log(chalk.blue(`Installing ${type}...`));
   let namespace;
   try {
     const appData: any = fs.readFileSync(
@@ -253,7 +253,7 @@ export async function installFrontendThemeOrPlugin(
 
   move(Constants.THEME_HOOKS_DIR, `${srcPath}/hooks`);
 
-  console.log('Done!');
+  console.log(chalk.green(`✓ Done!`));
   // Finished installing
 }
 

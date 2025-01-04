@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import {promises as fs} from 'fs';
 import * as path from 'path';
 import * as _ from 'lodash';
@@ -75,7 +76,7 @@ export async function updateThemeOrPlugin(options: any) {
     console.error('Unable to process API key.');
     process.exit(1);
   }
-  console.log(`Updating ${type}...`);
+  console.log(chalk.blue(`Updating ${type}...`));
   const isValid = await validateApiKey(apiKey);
   if (!isValid) {
     apiKey = await promptForApiKey();
@@ -101,7 +102,7 @@ export async function updateThemeOrPlugin(options: any) {
     process.exit(1);
   }
 
-  console.log('Done!');
+  console.log(chalk.green(`✓ Done!`));
 }
 
 export async function setupSite() {

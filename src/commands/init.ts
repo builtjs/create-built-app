@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import {
   installFrontendSite,
   installFrontendThemeOrPlugin,
@@ -81,7 +82,7 @@ async function installSite(dirs: any, cms: string) {
     return;
   });
 
-  console.log('Done!');
+  console.log(chalk.green(`✓ Done!`));
 }
 
 function getDep(dirs: [], dep: string) {

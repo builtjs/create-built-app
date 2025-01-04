@@ -1,4 +1,5 @@
 import axios from 'axios';
+import chalk from 'chalk';
 import {
   getApiKey,
   promptForApiKey,
@@ -13,7 +14,7 @@ import * as zlib from 'zlib';
 import {CombinedData} from '../interfaces';
 
 async function publish() {
-  console.log('Publishing...');
+  console.log(chalk.blue(`Publishing...`));
   const {combinedData, type} = await getCombinedData(true);
   // Compress combinedData before sending
   const compressedData = compressData(combinedData);

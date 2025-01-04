@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import 'dotenv/config';
 import {createClient} from 'next-sanity';
 import importPageData from './import-page-data';
@@ -21,8 +22,7 @@ const getEnvVariable = (key: string): string => {
 };
 
 export async function setupSiteData(): Promise<void> {
-  console.info('Seeding data into Sanity...');
-
+  console.log(chalk.blue(`Seeding data into Sanity...`));
   let client;
   try {
     const sanityProjectId = getEnvVariable('NEXT_PUBLIC_SANITY_PROJECT_ID');
@@ -68,7 +68,7 @@ export async function setupSiteData(): Promise<void> {
     const uploadsPath = path.join(process.cwd(), uploadsDirPath);
     await fs.rm(uploadsPath, {recursive: true, force: true});
 
-    console.log('Done!');
+    console.log(chalk.green(`✓ Done!`));
     process.exit(1);
   } catch (error) {
     console.error('Error importing data:', error);
