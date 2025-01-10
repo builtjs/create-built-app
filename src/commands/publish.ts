@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { default as axios } from 'axios';
 import chalk from 'chalk';
 import {
   getApiKey,

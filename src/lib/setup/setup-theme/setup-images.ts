@@ -2,7 +2,7 @@ import {promises as fsPromises} from 'fs';
 import path from 'path';
 import pluralize from 'pluralize';
 import {downloadImage} from '../setup-site/file-utils';
-import {BuiltData, ContentType, Field} from '../../../interfaces';
+import {BuiltData, ContentType, Field} from '../../../interfaces.js';
 
 interface ThemeOrPlugin {
   language?: string;

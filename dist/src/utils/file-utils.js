@@ -1,0 +1,71 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.readDataFile = readDataFile;
+exports.readModulePagesFile = readModulePagesFile;
+exports.readPagesFile = readPagesFile;
+exports.readCollectionFile = readCollectionFile;
+exports.readSectionsFile = readSectionsFile;
+exports.ensureDirectoryExists = ensureDirectoryExists;
+const promises_1 = __importDefault(require("fs/promises"));
+const path_1 = __importDefault(require("path"));
+async function readDataFile() {
+    try {
+        const dataPath = path_1.default.join(process.cwd(), 'public/data/_built/data.json');
+        const data = await promises_1.default.readFile(dataPath, 'utf-8');
+        return JSON.parse(data);
+    }
+    catch (error) {
+        throw new Error('Failed to read data.json file. Make sure it exists in public/data/_built/');
+    }
+}
+async function readModulePagesFile() {
+    try {
+        const modulePagesPath = path_1.default.join(process.cwd(), 'public/data/module-pages.json');
+        const data = await promises_1.default.readFile(modulePagesPath, 'utf-8');
+        return JSON.parse(data);
+    }
+    catch (error) {
+        throw new Error('Failed to read module-pages.json file. Make sure it exists in public/data/');
+    }
+}
+async function readPagesFile() {
+    try {
+        const pagesPath = path_1.default.join(process.cwd(), 'public/data/pages.json');
+        const data = await promises_1.default.readFile(pagesPath, 'utf-8');
+        return JSON.parse(data);
+    }
+    catch (error) {
+        throw new Error('Failed to read pages.json file. Make sure it exists in public/data/');
+    }
+}
+async function readCollectionFile(collectionName) {
+    try {
+        const pagesPath = path_1.default.join(process.cwd(), `public/data/collections/${collectionName}.json`);
+        const data = await promises_1.default.readFile(pagesPath, 'utf-8');
+        return JSON.parse(data);
+    }
+    catch (error) {
+        throw new Error(`Failed to read ${collectionName}.json file. Make sure it exists in public/data/collections`);
+    }
+}
+async function readSectionsFile() {
+    try {
+        const sectionsPath = path_1.default.join(process.cwd(), 'public/data/sections.json');
+        const data = await promises_1.default.readFile(sectionsPath, 'utf-8');
+        return JSON.parse(data);
+    }
+    catch (error) {
+        throw new Error('Failed to read sections.json file. Make sure it exists in public/data/');
+    }
+}
+async function ensureDirectoryExists(dirPath) {
+    try {
+        await promises_1.default.access(dirPath);
+    }
+    catch {
+        await promises_1.default.mkdir(dirPath, { recursive: true });
+    }
+}

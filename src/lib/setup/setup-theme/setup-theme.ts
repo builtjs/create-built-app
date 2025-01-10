@@ -10,7 +10,7 @@ import * as _ from 'lodash';
 import {mergeData} from '../../../lib/setup/setup-theme/merge-data';
 import {updateImagesForThemeOrPlugin} from '../../../lib/setup/setup-theme/setup-images';
 import {getCombinedData} from '../../../commands/publish';
-import {BuiltData, Page, Section, ThemeOrPlugin} from '../../../interfaces';
+import {BuiltData, Page, Section, ThemeOrPlugin} from '../../../interfaces.js';
 
 interface ThemeData {
   pages: Page[];

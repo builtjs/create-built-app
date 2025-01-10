@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { TemplatesData } from './../interfaces';
+import { TemplatesData } from './../interfaces.js';
 
 export async function readTemplatesFile(): Promise<TemplatesData> {
   try {

@@ -1,13 +1,9 @@
-import {Section} from '../../interfaces.js';
-import {designSystems} from './design-system';
-
-export function createComponentPrompt(
-  section: Section,
-  templateName: string,
-  customPrompt?: string,
-  designSystem: 'basic' | 'shadcn' = 'basic'
-): string {
-  const basePrompt = `You are a senior UI/UX designer and frontend developer who crafts highly polished, production-ready React components with beautiful Tailwind styling. Your designs are known for their:
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createComponentPrompt = createComponentPrompt;
+const design_system_1 = require("./design-system");
+function createComponentPrompt(section, templateName, customPrompt, designSystem = 'basic') {
+    const basePrompt = `You are a senior UI/UX designer and frontend developer who crafts highly polished, production-ready React components with beautiful Tailwind styling. Your designs are known for their:
 - Perfect visual hierarchy and spacing
 - Thoughtful use of typography and color
 - Subtle animations and transitions
@@ -21,7 +17,7 @@ Section Purpose: ${section.description}
 ${customPrompt ? `UI Description: ${customPrompt}` : ''}
 
 Design System Reference:
-${designSystems[designSystem]}
+${design_system_1.designSystems[designSystem]}
 
 Component Requirements:
 1. Props: { content?: { data?: Record<string, any> } }
@@ -63,6 +59,5 @@ Return ONLY this JSON structure wrapped in triple backticks:
 \`\`\`
 
 Keep the JSON structure exact, escape quotes in code, and ensure it's valid JSON.`;
-
-  return basePrompt;
+    return basePrompt;
 }

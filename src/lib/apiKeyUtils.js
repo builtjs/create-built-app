@@ -1,7 +1,7 @@
 import inquirer from 'inquirer';
 import fs from 'fs';
 import path from 'path';
-import axios from 'axios';
+import { default as axios } from 'axios';
 import {Constants} from '../constants';
 
 const configFilePath = path.resolve(__dirname, 'config.json');

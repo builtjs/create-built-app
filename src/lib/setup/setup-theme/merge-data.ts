@@ -1,7 +1,7 @@
 import {
   BuiltData, 
   Layout
-} from '../../../interfaces';
+} from '../../../interfaces.js';
 
 export type FieldType = {
   type: string;

@@ -1,6 +1,6 @@
 import fs from 'fs-extra';
 import path from 'path';
-import { SectionsData, TemplatesData } from '../../interfaces';
+import { SectionsData, TemplatesData } from '../../interfaces.js';
 
 export async function readSectionsData(projectRoot: string): Promise<SectionsData> {
   const sectionsPath = path.join(projectRoot, 'public/data/sections.json');
