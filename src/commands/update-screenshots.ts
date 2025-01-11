@@ -22,8 +22,6 @@ export async function updateScreenshots(themeOrPlugin: ThemeOrPlugin, type: stri
       console.log(`Processing page: ${modulePage.page.name}`);
       await takeScreenshots(modulePage, pagesData, sectionsData, themeOrPlugin, type, hasCloudinary, customPort);
     }
-    
-    console.log(`Screenshots updated successfully!\n`);
   } catch (error) {
     process.exit(1);
   }

@@ -234,7 +234,7 @@ export async function installFrontendThemeOrPlugin(
   let namespace;
   try {
     const appData: any = fs.readFileSync(
-      `${Constants.CONFIG_PREFIX}/${type}.json`,
+      `${Constants.CONFIG_PREFIX}/public/data/${type}.json`,
     );
     const app = JSON.parse(appData)[type];
     if (app.namespace) {

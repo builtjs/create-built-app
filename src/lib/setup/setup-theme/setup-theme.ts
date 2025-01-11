@@ -384,7 +384,7 @@ async function updateCss(
   let stylesPath = frontendPath
     ? `${frontendPath}/styles`
     : path.join(process.cwd(), `styles`);
-  let cssPath: string = `${stylesPath}/globals.css`;
+  let cssPath: string = `${namespacePath}/globals.css`;
   let cssData: string;
   try {
     cssData = await fs.promises.readFile(cssPath, 'utf8');
