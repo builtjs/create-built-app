@@ -1,6 +1,3 @@
-import {promises as fs} from 'fs';
-import * as path from 'path';
-import {createReadStream} from 'fs';
 import * as fileUtils from '../file-utils';
 import createPage from '../create-page';
 

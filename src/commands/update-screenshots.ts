@@ -17,6 +17,10 @@ export async function updateScreenshots(themeOrPlugin: ThemeOrPlugin, type: stri
     // Ensure screenshots directory exists
     await ensureDirectoryExists('public/images/screenshots');
     const hasCloudinary = await initCloudinary();
+    if(!hasCloudinary){
+      console.error('Cloudinary variables not found in .env file');
+      throw new Error();
+    }
     // Process each page and take screenshots
     for (const modulePage of modulePagesData.modulePages) {
       console.log(`Processing page: ${modulePage.page.name}`);

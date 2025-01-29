@@ -90,22 +90,6 @@ export function getCombinedData(
   });
 }
 
-function collectAllConfigData(data: CombinedData, srcDir: string) {
-  const files = [
-    {path: 'tailwind.config.js', required: true},
-    {path: 'postcss.config.js', required: true},
-    {path: 'next.config.js', required: true},
-    {path: 'jsconfig.site.json', required: false},
-    {path: '.env.example', required: false},
-    {path: 'README.site.md', required: false},
-    {path: `${srcDir}/pages/_app.tsx`, required: true},
-    {path: `${srcDir}/pages/_document.tsx`, required: false},
-  ];
-  files.map(file =>
-    collectConfigData(file, '', data, file.path.endsWith('.json'))
-  );
-}
-
 function collectData(
   baseDir: string,
   files: FileObject[],
@@ -132,22 +116,6 @@ function removeSubstringFromStart(str: string, substring: string): string {
   return str;
 }
 
-function collectConfigData(
-  file: FileObject,
-  baseDir: string,
-  targetObject: {[key: string]: any},
-  isJson: boolean = false
-): void {
-  const result = getFile(baseDir, file);
-  const {relativePath, fileContent} = result;
-  if (!relativePath || !fileContent) {
-    return;
-  }
-  targetObject.config[relativePath] = isJson
-    ? JSON.parse(fileContent)
-    : fileContent;
-}
-
 interface FileObject {
   path: string;
   required: boolean;
@@ -157,43 +125,93 @@ interface NodeJsError extends Error {
   code?: string;
 }
 
-function getFile(baseDir: string, file: FileObject) {
-  // Ensure absolute paths
-  const absoluteBaseDir = path.resolve(baseDir);
-  const absoluteFilePath = path.resolve(file.path);
 
-  // Get relative path and sanitize
-  const sanitizedPath = sanitizeFilePath(path.relative(absoluteBaseDir, absoluteFilePath));
+function collectAllConfigData(data: CombinedData, srcDir: string) {
+  const files = [
+    { path: 'tailwind.config', required: true },
+    { path: 'postcss.config', required: true },
+    { path: 'next.config', required: true },
+    { path: 'jsconfig.site.json', required: false },
+    { path: '.env.example', required: false },
+    { path: 'README.site.md', required: false },
+    { path: `${srcDir}/pages/_app.tsx`, required: true },
+    { path: `${srcDir}/pages/_document.tsx`, required: false },
+  ];
 
-  if (!isValidFileType(sanitizedPath) || !isFileSizeValid(file)) {
-    console.warn(`Skipping invalid or large file: ${sanitizedPath}`);
-    return { relativePath: null, fileContent: null };
+  files.forEach(file =>
+    collectConfigData(file, '', data, file.path.endsWith('.json'))
+  );
+}
+
+function collectConfigData(
+  file: FileObject,
+  baseDir: string,
+  targetObject: { [key: string]: any },
+  isJson: boolean = false
+): void {
+  const result = getFile(baseDir, file);
+  const { relativePath, fileContent } = result;
+
+  if (!relativePath || !fileContent) {
+    return;
   }
 
-  if (!fs.existsSync(absoluteFilePath)) {
+  targetObject.config[relativePath] = isJson
+    ? JSON.parse(fileContent)
+    : fileContent;
+}
+
+interface FileObject {
+  path: string; // Path without extension (e.g., 'tailwind.config')
+  required: boolean;
+}
+
+function getFile(baseDir: string, file: FileObject) {
+  const absoluteBaseDir = path.resolve(baseDir);
+  const extensions = ['.js', '.ts', '.json', '.md', '.tsx', 'example', '.css']; 
+  const validExtensions = ['.js', '.ts']; 
+  const fileExtension = path.extname(file.path); 
+  console.log({fileExtension})
+  const hasExtension = extensions.includes(fileExtension);
+  let selectedPath: string | null = null;
+
+  if (hasExtension) {
+    // Directly check the provided path if it has a valid extension
+    const absoluteFilePath = path.resolve(absoluteBaseDir, file.path);
+    if (fs.existsSync(absoluteFilePath)) {
+      selectedPath = absoluteFilePath;
+    }
+  } else {
+    // Check for valid extensions if the file has no or an invalid extension
+    for (const ext of validExtensions) {
+      const absoluteFilePath = path.resolve(absoluteBaseDir, `${file.path}${ext}`);
+      console.log({ absoluteFilePath });
+      if (fs.existsSync(absoluteFilePath)) {
+        selectedPath = absoluteFilePath;
+        break;
+      }
+    }
+  }
+
+  if (!selectedPath) {
     if (file.required) {
-      console.error(`Error: Required file not found: ${absoluteFilePath}`);
+      console.error(`Error: Required file not found: ${file.path}`);
       process.exit(1);
     }
     return { relativePath: null, fileContent: null };
   }
 
-  let fileContent = null;
+  let fileContent: string | null = null;
   try {
-    fileContent = fs.readFileSync(absoluteFilePath, 'utf8');
+    fileContent = fs.readFileSync(selectedPath, 'utf8');
   } catch (error) {
-    const nodeError = error as NodeJsError;
-    if (nodeError.code === 'ENOENT') {
-      if (file.required) {
-        console.error(`Error: Required file not found: ${absoluteFilePath}`);
-        process.exit(1);
-      }
-    } else {
-      console.error(`Error: Unable to read file: ${absoluteFilePath}`, error);
-      if (file.required) process.exit(1);
-    }
+    console.error(`Error: Unable to read file: ${selectedPath}`, error);
+    if (file.required) process.exit(1);
   }
 
+  const sanitizedPath = sanitizeFilePath(
+    path.relative(absoluteBaseDir, selectedPath)
+  );
   const relativePath = removeSubstringFromStart(sanitizedPath, 'src/');
   return { relativePath, fileContent };
 }

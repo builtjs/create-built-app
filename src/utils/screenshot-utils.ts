@@ -25,7 +25,6 @@ export async function takeScreenshots(
   hasCloudinary: boolean,
   customPort?: string | number,
 ): Promise<void> {
-  // const browserSpinner = createSpinner('Launching browser...').start();
   const port = customPort ? customPort : DEFAULT_PORT;
   const page = pagesData.pages.find(s => s.name === modulePage.page.name);
   if (!page) {

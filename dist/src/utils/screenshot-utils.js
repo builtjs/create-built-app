@@ -14,7 +14,6 @@ const file_utils_js_1 = require("./file-utils.js");
 const LAPTOP_SCREEN_WIDTH = 1366;
 const DEFAULT_PORT = 3000;
 async function takeScreenshots(modulePage, pagesData, sectionsData, themeOrPlugin, type, hasCloudinary, customPort) {
-    // const browserSpinner = createSpinner('Launching browser...').start();
     const port = customPort ? customPort : DEFAULT_PORT;
     const page = pagesData.pages.find(s => s.name === modulePage.page.name);
     if (!page) {

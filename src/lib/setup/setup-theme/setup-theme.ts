@@ -80,11 +80,7 @@ export async function update(
     }
 
     // Path to the output file
-    const outputPath = path.join(
-      frontendPath,
-      'public/data/_built',
-      'data.json',
-    );
+    const outputPath = path.join(frontendPath, '.built', 'data.json');
     let combinedSectionPositionData: PageSectionData = {};
 
     let updatedCombinedPluginData = {};
@@ -454,8 +450,7 @@ async function processUpdateCss(
       }
     }
 
-    // cssString += `@import './globals.css';`;
-    cssData = cssString + cssData; //cssData.replace(`@import './globals.css';`, cssString);
+    cssData = cssString + cssData;
 
     // Write the updated CSS data back to css path
     await fsp.writeFile(cssPath, cssData);
@@ -532,9 +527,6 @@ async function setupPlugins(
         if (error.response) {
           if (error.response.data.message) {
             let msg = error.response.data.message;
-            // if (error.response.data.docsUrl) {
-            //   msg += `. Find out more at https://docs.builtjs.com/${error.response.data.docsUrl}.`;
-            // }
             console.error(msg);
             if (error.response.data.message === 'Invalid API key') {
               apiKey = await promptForApiKey();
@@ -1030,6 +1022,43 @@ const orderSections = (sections: Sections): Sections => {
   return orderedSections;
 };
 
+async function getCollections(
+  collectionsDir: string,
+): Promise<{[key: string]: any}> {
+  let collections: {[key: string]: any} = {};
+  try {
+    // Read all files in the collections directory
+    const files = await fsp.readdir(collectionsDir);
+
+    for (const file of files) {
+      const filePath = path.join(collectionsDir, file);
+
+      // Skip non-JSON files
+      if (!file.endsWith('.json')) continue;
+
+      try {
+        // Read and parse each JSON file
+        const fileContent = await fsp.readFile(filePath, 'utf8');
+        const jsonData = JSON.parse(fileContent);
+
+        if (jsonData.data && Array.isArray(jsonData.data)) {
+          // Use the file name (without extension) as the collection key
+          const collectionName = _.camelCase(path.basename(file, '.json'));
+          collections[collectionName] = jsonData.data;
+        } else {
+          console.warn(`File ${file} does not have a valid 'data' array.`);
+        }
+      } catch (err) {
+        console.error(`Error reading or parsing file ${file}:`, err);
+      }
+    }
+  } catch (err) {
+    console.error(`Error reading collections directory:`, err);
+  }
+
+  return collections;
+}
+
 async function getThemeData(
   type: string,
   frontendPath?: string,
@@ -1048,20 +1077,21 @@ async function getThemeData(
   globalData = await readJsonFile(path.join(dataPath, 'global.json'));
 
   const layoutData = await readJsonFile(path.join(dataPath, 'layout.json'));
-
+  const collectionsData = await getCollections(
+    path.join(dataPath, 'collections'),
+  );
   const themeData: BuiltData = {
     contentTypes: contentTypesData.contentTypes || [],
     pages: pagesData.pages || [],
     sections: sectionsData.sections || [],
     templates: templatesData.templates || [],
     layout: layoutData.layout || {},
-    collections: {},
+    collections: collectionsData,
     plugins: [],
   };
   if (globalData) {
     themeData.global = globalData.global ? globalData.global : {};
   }
-
   return themeData;
 }
 

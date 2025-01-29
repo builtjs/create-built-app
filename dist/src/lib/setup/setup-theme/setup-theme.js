@@ -47,7 +47,7 @@ async function update(themeOrPlugin, type, apiKey, frontendPath, isConfig) {
             namespacePath = `plugins/${themeOrPlugin.namespace}`;
         }
         // Path to the output file
-        const outputPath = path.join(frontendPath, 'public/data/_built', 'data.json');
+        const outputPath = path.join(frontendPath, '.built', 'data.json');
         let combinedSectionPositionData = {};
         let updatedCombinedPluginData = {};
         if (themeOrPlugin &&

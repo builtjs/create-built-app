@@ -64,7 +64,7 @@ function mergeObjects<T extends Record<string, any>>(obj1: T, obj2: T): T {
         !Array.isArray(obj1[key])
       ) {
         merged[key] = mergeObjects(obj1[key], obj2[key]);
-      } else if (Array.isArray(obj1[key]) && isNamedArray(obj2[key])) {
+      } else if ((obj1[key] && Array.isArray(obj1[key])) && Array.isArray(obj2[key])) {
         merged[key] = mergeArraysDistinct(obj1[key], obj2[key] as any);
       } else {
         merged[key] = obj2[key];
@@ -79,6 +79,7 @@ export function mergeData(data1: BuiltData, data2: BuiltData): BuiltData {
   if (Object.keys(data2).length === 0) {
     return data1;
   }
+  mergeObjects<Collection>(data1.collections, data2.collections)
   let data: BuiltData = {
     contentTypes: mergeArraysDistinct(data1.contentTypes, data2.contentTypes),
     pages: mergeArraysDistinct(data1.pages, data2.pages),
