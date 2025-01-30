@@ -171,10 +171,8 @@ function getFile(baseDir: string, file: FileObject) {
   const extensions = ['.js', '.ts', '.json', '.md', '.tsx', 'example', '.css']; 
   const validExtensions = ['.js', '.ts']; 
   const fileExtension = path.extname(file.path); 
-  console.log({fileExtension})
   const hasExtension = extensions.includes(fileExtension);
   let selectedPath: string | null = null;
-
   if (hasExtension) {
     // Directly check the provided path if it has a valid extension
     const absoluteFilePath = path.resolve(absoluteBaseDir, file.path);
@@ -185,7 +183,6 @@ function getFile(baseDir: string, file: FileObject) {
     // Check for valid extensions if the file has no or an invalid extension
     for (const ext of validExtensions) {
       const absoluteFilePath = path.resolve(absoluteBaseDir, `${file.path}${ext}`);
-      console.log({ absoluteFilePath });
       if (fs.existsSync(absoluteFilePath)) {
         selectedPath = absoluteFilePath;
         break;
