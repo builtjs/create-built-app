@@ -151,6 +151,7 @@ function getImageDataFromBuilt(
       Object.keys(section.data).map((fieldOrArray: any) => {
         if (Array.isArray(section.data[fieldOrArray])) {
           let singularName = pluralize.singular(fieldOrArray);
+          console.log({singularName})
           section.data[fieldOrArray].forEach((element: any) => {
             for (const key in element) {
               if (
@@ -159,7 +160,7 @@ function getImageDataFromBuilt(
                 elementSchemaImageFields[singularName].fields.includes(key)
               ) {
                 const image = element[key];
-                if (image && image.path && image.url) {
+                if (image && image.url) {
                   addImage(image);
                 }
               }

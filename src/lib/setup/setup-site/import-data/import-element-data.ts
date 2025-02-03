@@ -11,16 +11,15 @@ interface ElementsData {
   data: Element[];
 }
 
-export default async function importEntryData(client: any, elements: ElementsData): Promise<void> {
+export default async function importElementData(client: any, elements: ElementsData): Promise<void> {
   if (!elements || !elements.data) {
     return;
   }
-
   for (const element of elements.data) {
     let files;
     if (element.files) {
       files = await fileUtils.getFilesData(element.files);
     }
-    await createEntry(client, element, files);
+    await createEntry(client, element.data, files);
   }
 }

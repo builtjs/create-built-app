@@ -26,17 +26,19 @@ function mergeArraysDistinct<T extends {name: string; slug?: string; namespace?:
     if (index === -1) {
       // No item with the same name exists in arr1, so push item2 directly
       merged.push(item2);
-    } else {
-      // Item with the same name exists, merge it
-      const item1 = merged[index];
-      // Check if namespaces are the same
-      const namespace =
-        item1.namespace === item2.namespace ? item1.namespace : undefined;
-
-      // Merge objects, excluding namespace if they differ
-      const {namespace: _, ...rest} = item2; // Exclude namespace from item2
-      merged[index] = {...item1, ...rest, namespace};
-    }
+    } 
+    // else {
+    //   // Item with the same name exists, merge it
+    //   const item1 = merged[index];
+    //   // Check if namespaces are the same
+    //   const namespace =
+    //     item1.namespace === item2.namespace ? item1.namespace : undefined;
+    //     console.log('merge distinct objects...', merged)
+    //   // Merge objects, excluding namespace if they differ
+    //   const {namespace: _, ...rest} = item2; // Exclude namespace from item2
+    //   merged[index] = {...item1, ...rest, namespace};
+    //   console.log('merge distinct objects after merge...', merged)
+    // }
   });
 
   return merged;

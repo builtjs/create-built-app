@@ -286,10 +286,13 @@ export async function sendRequest(type: string, data: Buffer): Promise<void> {
         }
       );
       if (response.data && response.data.success && response.data.url) {
-        console.log(
-          `Your ${type} has been ${
+        console.log(chalk.green(
+          `✓ Your ${type} has been ${
             response.data.action === 'create' ? 'published' : 'updated'
-          } in Built Studio!\nView the ${type} at: ${response.data.url}`
+          } in Built Studio!`
+        ));
+        console.log(
+          `View the ${type} at: ${chalk.blue(response.data.url)}`
         );
       } else {
         console.error(`Failed to publish ${type}.`);
