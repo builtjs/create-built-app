@@ -20,7 +20,7 @@ export interface CombinedData {
   };
 
   export interface BuiltData {
-    sections: BuiltSection[];
+    sections: Section[];
     pages: Page[];
     contentTypes: ContentType[];
     layout: Layout;
@@ -63,12 +63,6 @@ export interface CombinedData {
     contentType: ContentType;
     sections: Section[];
   };
-
-  export interface BuiltSection {
-    name: string;
-    title: string;
-    data: {[key: string]: any};
-  }
 
   export interface ContentType {
     name: string;

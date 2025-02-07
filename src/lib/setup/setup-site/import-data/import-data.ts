@@ -48,19 +48,19 @@ export async function setupSiteData(): Promise<void> {
     const data = JSON.parse(await fs.readFile(dataPath, 'utf8'));
 
     await importGlobalData(client, data.global);
-    console.log('Global data import complete');
+    console.log(chalk.green(`✓ Global data import complete`));
 
     await importElementData(client, data.elements);
-    console.log('Element data import complete');
+    console.log(chalk.green(`✓ Element data import complete`));
 
     await importLayoutData(client, data.layout);
-    console.log('Layout data import complete');
+    console.log(chalk.green(`✓ Layout data import complete`));
 
     await importPageElementData(client, data);
-    console.log('Page element data import complete');
+    console.log(chalk.green(`✓ Page element data import complete`));
 
     await importPageData(client, data);
-    console.log('Page data import complete');
+    console.log(chalk.green(`✓ Page data import complete`));
 
     await importEntryData(client, data.entries);
 

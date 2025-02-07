@@ -26,7 +26,7 @@
     "pretest": "npm run compile",
     "posttest": "npm run lint",
     "watch": "tsc --watch",
-    "build": "npm run clean && npm run compile",
+    "build": "npm run clean && npm run compile && npm run obfuscate && npm run minify",
     "obfuscate": "javascript-obfuscator dist --output dist --compact true --control-flow-flattening true",
     "minify": "find dist -name '*.js' -exec terser {} --compress --mangle --output {} \\;"
   },

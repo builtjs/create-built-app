@@ -909,6 +909,8 @@ async function createMergedData(
         mergedData.collections[collectionName].concat(uniqueDataArray);
     }
 
+    filterHeadSections(mergedData);
+
     const dir = path.dirname(outputPath);
     await fsp.mkdir(dir, {recursive: true});
 
@@ -920,6 +922,36 @@ async function createMergedData(
     );
     return resolve(mergedData);
   });
+}
+
+export function filterHeadSections(data: BuiltData): BuiltData {
+  const usedHeadSections = new Set<string>();
+
+  // Update demoSections to remove duplicate "head" sections per page
+  data.pages.forEach(page => {
+    const seenHead = new Set<string>();
+    page.demoSections = page.demoSections.filter(section => {
+      const sectionData = data.sections.find(s => s.name === section.name);
+
+      // Ensure sectionData exists before accessing properties
+      if (sectionData && sectionData.type === "head") {
+        if (seenHead.size > 0) return false; // Keep only the first "head" section
+        seenHead.add(section.name);
+      }
+
+      return true;
+    });
+
+    // Track used head sections
+    seenHead.forEach(name => usedHeadSections.add(name));
+  });
+
+  // Remove unused "head" sections from the sections array
+  data.sections = data.sections.filter(
+    section => section.type !== "head" || usedHeadSections.has(section.name)
+  );
+
+  return data;
 }
 
 function getArticlePageCode(pageName: string, contentTypeName: string): string {

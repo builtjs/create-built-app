@@ -129,7 +129,7 @@ function getImageDataFromBuilt(
     const globalData = builtData.global;
     globalSchemaImageFields.forEach(field => {
       const image = globalData[field];
-      if (image && image.path && image.url) {
+      if (typeof image === 'object' && image !== null && 'path' in image && 'url' in image) {
         addImage(image);
       }
     });
@@ -143,40 +143,75 @@ function getImageDataFromBuilt(
       if (sectionSchemaImageFields[sectionName]) {
         sectionSchemaImageFields[sectionName].fields.forEach(field => {
           const image = section.data[field];
-          if (image && image.path && image.url) {
+          if (typeof image === 'object' && image !== null && 'path' in image && 'url' in image) {
             addImage(image);
           }
         });
       }
-      Object.keys(section.data).map((fieldOrArray: any) => {
-        if (Array.isArray(section.data[fieldOrArray])) {
-          let singularName = pluralize.singular(fieldOrArray);
-          console.log({singularName})
-          section.data[fieldOrArray].forEach((element: any) => {
-            for (const key in element) {
-              if (
-                elementSchemaImageFields[singularName] &&
-                elementSchemaImageFields[singularName].fields &&
-                elementSchemaImageFields[singularName].fields.includes(key)
-              ) {
-                const image = element[key];
-                if (image && image.url) {
-                  addImage(image);
+
+      Object.keys(section.data).forEach((fieldOrArray) => {
+        const value = section.data[fieldOrArray];
+      
+        if (Array.isArray(value)) {
+          const singularName = pluralize.singular(fieldOrArray);
+      
+          value.forEach((element) => {
+            if (typeof element === 'object' && element !== null) {
+              for (const key in element) {
+                if (
+                  elementSchemaImageFields[singularName] &&
+                  elementSchemaImageFields[singularName].fields &&
+                  elementSchemaImageFields[singularName].fields.includes(key)
+                ) {
+                  const image = element[key];
+                  if (typeof image === 'object' && image !== null && 'path' in image && 'url' in image) {
+                    addImage(image);
+                  }
                 }
               }
             }
           });
-        } else {
-          for (const key in fieldOrArray) {
+        } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+          for (const key in value as Record<string, unknown>) {
             if (sectionSchemaImageFields[key]) {
-              const image = fieldOrArray[key];
-              if (image && image.path && image.url) {
+              const image = (value as Record<string, any>)[key];
+              if (typeof image === 'object' && image !== null && 'path' in image && 'url' in image) {
                 addImage(image);
               }
             }
           }
         }
       });
+      
+      // Object.keys(section.data).map((fieldOrArray: any) => {
+      //   if (Array.isArray(section.data[fieldOrArray])) {
+      //     let singularName = pluralize.singular(fieldOrArray);
+      //     console.log({singularName})
+      //     section.data[fieldOrArray].forEach((element: any) => {
+      //       for (const key in element) {
+      //         if (
+      //           elementSchemaImageFields[singularName] &&
+      //           elementSchemaImageFields[singularName].fields &&
+      //           elementSchemaImageFields[singularName].fields.includes(key)
+      //         ) {
+      //           const image = element[key];
+      //           if (typeof image === 'object' && image !== null && 'path' in image && 'url' in image) {
+      //             addImage(image);
+      //           }
+      //         }
+      //       }
+      //     });
+      //   } else {
+      //     for (const key in fieldOrArray) {
+      //       if (sectionSchemaImageFields[key]) {
+      //         const image = fieldOrArray[key];
+      //         if (image && image.path && image.url) {
+      //           addImage(image);
+      //         }
+      //       }
+      //     }
+      //   }
+      // });
     }
   });
   // Get collection images

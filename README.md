@@ -197,3 +197,16 @@ To unlink:
 ```bash
 npm unlink -g create-built-app
 ```
+
+### Troubleshooting
+If you get:
+```
+sh: /opt/homebrew/bin/built: Permission denied
+```
+Do:
+```
+rm -f /opt/homebrew/bin/built
+```
+```
+npm install -g create-built-app
+```
