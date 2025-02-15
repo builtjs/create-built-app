@@ -1022,7 +1022,7 @@ async function createPageFiles(
       fileContent = getArticlePageCode(page.name, contentType.name);
     } else {
       // No content type, create file at the root of pages
-      const kebabCaseName = _.kebabCase(name);
+      const kebabCaseName = name === 'home' ? 'index' : _.kebabCase(name);
       filePath = path.join(pagesPath, `${kebabCaseName}.tsx`);
       fileContent = getPageCode(name);
     }
